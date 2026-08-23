@@ -6,7 +6,8 @@ local relatedText = common.GetAddonRelatedTextGroup( "template", true )
 
 local color = 0xAA0000FF
 
-var_dump( relatedText, { r = 1, g = 0, b = 0, a = 0.2 }, color )
+local dump = var_dump( relatedText, { r = 1, g = 0, b = 0, a = 0.2 }, color )
+common.LogInfo( "common", dump )
 ```
 
 ---
