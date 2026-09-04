@@ -38,27 +38,27 @@ number(2852126975)
 Info: Debug info var_dump:
 ======================BEGIN======================
 userdata(WidgetForm) = {
-    GetAddonType = ENUM_ADDON_TYPE_USER
+    GetAddonType = number(ENUM_ADDON_TYPE_USER(1))
     GetAddonName = string(24) "UserAddon/LibreAlchemyV2"
-    GetDebugInfo = string(136) "[160300][WidgetForm]: (UserAddon/LibreAlchemyV2)->mainForm, Resource: Mods/Addons/LibreAlchemyV2/Widgets/LibreAlchemyV2.(WidgetForm).xdb"
+    GetDebugInfo = string(135) "[93064][WidgetForm]: (UserAddon/LibreAlchemyV2)->mainForm, Resource: Mods/Addons/LibreAlchemyV2/Widgets/LibreAlchemyV2.(WidgetForm).xdb"
     GetFade = number(1)
-    GetId = number(160300)
+    GetId = number(93064)
     GetName = string(14) "LibreAlchemyV2"
     GetNamedChildren = table(1) {
         [1] => userdata(WidgetPanel) = { GetName = string(5) "Panel" }
     }
     GetPickChildrenOnly = boolean(true)
-    GetPlacementPlain = table(10) {
-        ["alignX"] => number(3)
-        ["alignY"] => number(3)
+    GetPlacementPlain = table(WidgetPlacementLua) {
+        ["alignX"] => number(WIDGET_ALIGN_BOTH(3))
+        ["alignY"] => number(WIDGET_ALIGN_BOTH(3))
         ["highPosX"] => number(0)
         ["highPosY"] => number(0)
         ["posX"] => number(0)
         ["posY"] => number(0)
         ["sizeX"] => number(0)
         ["sizeY"] => number(0)
-        ["sizingX"] => number(0)
-        ["sizingY"] => number(0)
+        ["sizingX"] => number(WIDGET_SIZING_DEFAULT(0))
+        ["sizingY"] => number(WIDGET_SIZING_DEFAULT(0))
     }
 }
 =======================END=======================
