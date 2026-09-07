@@ -8,6 +8,12 @@
 		}
 	],
 	"settings": {
-		"files.autoGuessEncoding": false
+		"files.autoGuessEncoding": false,
+		"Lua.diagnostics.disable": [
+			"undefined-global",
+			"undefined-field",
+			"lowercase-global",
+			"undefined-doc-name"
+		]
 	}
 }
