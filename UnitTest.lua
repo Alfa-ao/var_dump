@@ -6,156 +6,155 @@
 --- @type ForgeCraftRecipeId - ресурс рецепта крафта
 --- @type ForgeCraftResourceId -- GetInfo - ресурс forge крафта
 --------------------------------------------------------------------------------
---var_dump( craft.GetForgeRecipes() )
+var_dump( craft.GetForgeRecipes() )
 
 --------------------------------------------------------------------------------
 --- @type SpellId
 --- @type ActionGroupId -- GetInfo
 --------------------------------------------------------------------------------
---var_dump( avatar.GetSpellBook() )
+var_dump( avatar.GetSpellBook() )
 
 --------------------------------------------------------------------------------
 --- @type RecipeId
 --- @type ComponentPropertyId
 --- @type ValuedText
 --------------------------------------------------------------------------------
---var_dump( avatar.GetAlchemyInfo().recipes[0] )
+var_dump( avatar.GetAlchemyInfo().recipes[0] )
 
 --------------------------------------------------------------------------------
 --- @type AbilityId
 --------------------------------------------------------------------------------
---var_dump( avatar.GetAbilities()[1] )
+var_dump( avatar.GetAbilities()[1] )
 
 --------------------------------------------------------------------------------
 --- @type BattlegroundMarkId
 --------------------------------------------------------------------------------
---var_dump( battleground.GetAvatarMark() )
+var_dump( battleground.GetAvatarMark() )
 
 --------------------------------------------------------------------------------
 --- @type BuffId
 --------------------------------------------------------------------------------
-
---[[ for buffId, buffInfo in pairs( object.GetBuffsInfo( avatar.GetId(), true, true ) ) do
+for buffId, buffInfo in pairs( object.GetBuffsInfo( avatar.GetId(), true, true ) ) do
     var_dump( buffId, buffInfo )
-end ]]
+end
 
 --------------------------------------------------------------------------------
 --- @type CharacterClassId
 --------------------------------------------------------------------------------
---var_dump( avatar.GetClassId() )
+var_dump( avatar.GetClassId() )
 
 --------------------------------------------------------------------------------
 --- Пробовать на обличие класса, например: демонолог
 --- @type CharacterFormId
 --------------------------------------------------------------------------------
---var_dump( unit.GetCharacterForm( avatar.GetId() ) )
+var_dump( unit.GetCharacterForm( avatar.GetId() ) )
 
 --------------------------------------------------------------------------------
 --- @type CurrencyId
 --- @type CurrencyCategoryId
 --------------------------------------------------------------------------------
---var_dump( avatar.GetCurrencyId( "myrrh" ) )
+var_dump( avatar.GetCurrencyId( "myrrh" ) )
 
 --------------------------------------------------------------------------------
 --- @type FactionId
 --------------------------------------------------------------------------------
---var_dump( unit.GetFactionId( avatar.GetId() ) )
+var_dump( unit.GetFactionId( avatar.GetId() ) )
 
 --------------------------------------------------------------------------------
 --- @type UnlockId
 --- @type UnlockCategoryId
 --------------------------------------------------------------------------------
---[[ for _, unlockId in ipairs( avatar.GetUnlocks() ) do
+for _, unlockId in ipairs( avatar.GetUnlocks() ) do
     var_dump( avatar.GetUnlockInfo( unlockId ) )
-end ]]
+end
 
 --------------------------------------------------------------------------------
 --- @type LifestyleCategoryId
 --------------------------------------------------------------------------------
---var_dump( checkroomLib.GetCategories() )
+var_dump( checkroomLib.GetCategories() )
 
 --------------------------------------------------------------------------------
 --- @type GlossaryId ?
 --------------------------------------------------------------------------------
---var_dump( test )
+var_dump( test )
 
 --------------------------------------------------------------------------------
 --- @type GoalId
 --------------------------------------------------------------------------------
---var_dump( common.GetAllodsGoalsOnLoadingScreen() )
+var_dump( common.GetAllodsGoalsOnLoadingScreen() )
 
 --------------------------------------------------------------------------------
 --- @type InstancedEventCategoryId
 --------------------------------------------------------------------------------
---var_dump( matchMaking.GetEventCategories() )
+var_dump( matchMaking.GetEventCategories() )
 
 --------------------------------------------------------------------------------
 --- @type InstancedEventResourceId
 --------------------------------------------------------------------------------
---var_dump( mwar.GetCommonMatchMakingInfo() )
+var_dump( mwar.GetCommonMatchMakingInfo() )
 
 --------------------------------------------------------------------------------
 --- @type InterfaceMapMarkerId
 --------------------------------------------------------------------------------
---var_dump( cartographer.GetMapMarkers( cartographer.GetCurrentZoneInfo().zonesMapId ) )
+var_dump( cartographer.GetMapMarkers( cartographer.GetCurrentZoneInfo().zonesMapId ) )
 
 --------------------------------------------------------------------------------
 --- @type ItemCategoryId
 --------------------------------------------------------------------------------
---var_dump( itemLib.GetRootCategories() )
+var_dump( itemLib.GetRootCategories() )
 
 --------------------------------------------------------------------------------
 --- пробовать на локации, например: Царство стихий. ["name"] => WString(16) "Огнеяр повержен!"
 --- @type MapModifierId
 --------------------------------------------------------------------------------
---var_dump( cartographer.GetCurrentMapModifiers() )
+var_dump( cartographer.GetCurrentMapModifiers() )
 
 --------------------------------------------------------------------------------
 --- @type PostTypeId
 --------------------------------------------------------------------------------
----var_dump( bulletinBoard.GetSectionInfos() )
+var_dump( bulletinBoard.GetSectionInfos() )
 
 --------------------------------------------------------------------------------
 --- Находиться в ангаре с кораблём своим
 --- @type ShipSkinId
 --------------------------------------------------------------------------------
---var_dump( hangar.GetAvailableSkins() )
+var_dump( hangar.GetAvailableSkins() )
 
 --------------------------------------------------------------------------------
 --- @type SpecialStatId
 --------------------------------------------------------------------------------
---var_dump( avatar.GetRecommendedStats() )
+var_dump( avatar.GetRecommendedStats() )
 
 --------------------------------------------------------------------------------
 --- @type TutorialCategoryId
 --- @type TutorialId
 --------------------------------------------------------------------------------
---[[ local categories = tutorialLib.GetCategories() -- TutorialCategoryId
+local categories = tutorialLib.GetCategories() -- TutorialCategoryId
 local tutorialIds = tutorialLib.GetCategoryContent( categories[1] ) -- TutorialId
-var_dump( categories, tutorialIds ) ]]
+var_dump( categories, tutorialIds )
 
 --------------------------------------------------------------------------------
 --- @type VariableId
 --------------------------------------------------------------------------------
---var_dump( avatar.GetVariables() )
+var_dump( avatar.GetVariables() )
 
 --------------------------------------------------------------------------------
 --- Тест на цикличность
 --------------------------------------------------------------------------------
---[[ local a = { d = nil}
-local b = { c = a }
+local a = { w = userMods.ToWString( "rrr" ), d = nil}
+local b = { c = a.w }
 a.d = b
-var_dump( a ) ]]
+var_dump( a )
 
 --------------------------------------------------------------------------------
 --- @type ItemClassId
 --------------------------------------------------------------------------------
---var_dump( avatar.GetItemClassList() )
+var_dump( avatar.GetItemClassList() )
 
 --------------------------------------------------------------------------------
 --- @type OrderBonusId
 --------------------------------------------------------------------------------
---var_dump( order.GetOrderBonus() )
+var_dump( order.GetOrderBonus() )
 
 --------------------------------------------------------------------------------
 --- Reforge (перековка) - это механика в кузнечном деле. Позволяет улучшать качество создаваемых предметов. 
@@ -166,20 +165,22 @@ var_dump( a ) ]]
 --------------------------------------------------------------------------------
 --- @type ZodiacSignId
 --------------------------------------------------------------------------------
---[[ local id = unit.GetEquipmentItemId( avatar.GetId(), DRESS_SLOT_OFFENSIVERUNE1, ITEM_CONT_EQUIPMENT )
+local id = unit.GetEquipmentItemId( avatar.GetId(), DRESS_SLOT_OFFENSIVERUNE1, ITEM_CONT_EQUIPMENT )
 local itemRuneInfo = itemLib.GetRuneInfo( id )
-var_dump( itemRuneInfo ) ]]
+var_dump( itemRuneInfo )
 
 --------------------------------------------------------------------------------
 --- @type userdata | table Widget
 --------------------------------------------------------------------------------
+var_dump( common.GetAddonMainForm( "UserAddon/LibreAlchemyV2" ) )
 --var_dump( mainForm )
-
+--var_dump( _G )
 --------------------------------------------------------------------------------
---- @type test
+--- @type FactoryCacheSafe | lightuserdata
 --------------------------------------------------------------------------------
---var_dump( test )
-
+var_dump( mainForm:GetFactoryCache() )
+--[[ local cache = mainForm:GetFactoryCache()
+common.LogInfo("common", "type=" .. type(cache) .. " apitype=" .. apitype(cache) ) ]]
 --------------------------------------------------------------------------------
 --- @type test
 --------------------------------------------------------------------------------
