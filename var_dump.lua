@@ -1,28 +1,35 @@
 -- Включение и настройка опций для участия дамба
-local __CONFIG_VAR_DUMP = {
+local __CONFIG_VAR_DUMP = type( rawget( _G, "__CONFIG_VAR_DUMP" ) ) == "table" and __CONFIG_VAR_DUMP or {
+    DEBUG = {
+        depth = 10 -- Максимальная глубина рекурсии. table(...) { 1 => table(...) { 1 => И т.д.. } }
+    },
     WIDGET = {
         GetPlacementPlain = true,
         GetSmartPlacementPlain = false,
         GetRealRect = false,
-        GetNamedChildrenRecursive = false, -- false (только имена, ибо может забить весь лог до ограничения)
-        IsEnabled = false,
+        GetNamedChildren = false, -- false: Использовать только имена, иначе может забить весь лог до ограничения
+        IsEnabled = true,
         IsEnabledEx = true,
-        IsVisible = false,
+        IsVisible = true,
         IsVisibleEx = true,
     },
     RESOURCE_ID = {
-        GetOnlyInfo = false, -- Использовать только метод ResourceId:GetInfo
+        GetOnlyInfo = false, -- true: Использовать только метод ResourceId:GetInfo
     },
     USERDATA = {
-        hexadecimal = false, -- Показывать адрес хранения #0x0f810b80
+        hexadecimal = false, -- Показывать адрес хранения #0x0f810b80. userdata(name)#0x0f810b80 = { ... }
     },
     TABLE = {
-        tableIdentification = true, -- Распознать таблицу и присвоить ей имя.
+        tableIdentification = true, -- Распознать таблицу и присвоить ей имя. table (Color) { ... }
     },
 }
 
 -- Если появился тип TWidget
 local ENABLE_TWIDGET = type( rawget( _G, "IsTWidget" ) ) == "function"
+
+--------------------------------------------------------------------------------
+-- Маппинг констант вместо значений.
+--------------------------------------------------------------------------------
 
 -- Маппинг для WidgetSafe:GetAddonType
 local ENUM_ADDON_TYPE_MAP = {
@@ -120,6 +127,15 @@ local ENUM_ZONE_TIER_DIFFICULTY_MAP = {
     [ZONE_TIER_DIFFICULTY_HARD] = "ZONE_TIER_DIFFICULTY_HARD",
     [ZONE_TIER_DIFFICULTY_INSANE] = "ZONE_TIER_DIFFICULTY_INSANE",
 }
+
+-- Маппинг констант для (TextureInfo)
+local TEXTURE_TYPE_MAP = {
+    [0] = "DXT1",
+    [1] = "DXT3",
+    [2] = "DXT5",
+}
+
+--------------------------------------------------------------------------------
 
 -- Подсчет элементов в таблице не/индексируемой.
 local function countEntries( tbl )
@@ -263,6 +279,15 @@ local isMutationInfoTable = createTableValidator {
     buffId = { "BuffId" },
 }
 
+-- Проверка на таблицу (TextureInfo)
+local isTextureInfoTable = createTableValidator {
+    binaryFile = { "string" },
+    realHeight = { "number" },
+    realWidth = { "number" },
+    type = { "number" },
+    xdbFile = { "string" },
+}
+
 --------------------------------------------------------------------------------
 
 -- Чистка от всякого хлама
@@ -302,7 +327,7 @@ local RESOURCE_INFO_MAP = {
 --- @param userdata_ancestors? table ///
 --- @return string
 local function var_dump_internal( value, depth, indent, seen_tables, userdata_ancestors )
-    depth = depth or 10
+    depth = depth or __CONFIG_VAR_DUMP.DEBUG.depth
     indent = indent or 0
     seen_tables = seen_tables or {}
     userdata_ancestors = userdata_ancestors or {}
@@ -432,7 +457,7 @@ local function var_dump_internal( value, depth, indent, seen_tables, userdata_an
                 type_str == "SpecialStatId" or -- 
                 type_str == "SpellId" or -- 
                 type_str == "TeleportMasterId" or -- 
-                type_str == "TextureId" or -- 
+                type_str == "TextureId" or -- common.GetTextureInfo
                 type_str == "TimeTableId" or -- GetInfo
                 type_str == "TutorialCategoryId" or -- 
                 type_str == "TutorialId" or -- 
@@ -540,7 +565,7 @@ local function var_dump_internal( value, depth, indent, seen_tables, userdata_an
                     local child_indent_str = new_indent_str .. indent_mode
                     local child_parts = { new_indent_str .. "GetNamedChildren = table(" .. #GetNamedChildren .. ") {" }
                     for i, child in ipairs( GetNamedChildren ) do
-                        if __CONFIG_VAR_DUMP.WIDGET.GetNamedChildrenRecursive then
+                        if __CONFIG_VAR_DUMP.WIDGET.GetNamedChildren then
                             local dump = var_dump_internal( child, depth - 1, indent + 2, seen_tables, userdata_ancestors ):sub( #child_indent_str + 1 )
                             table.insert( child_parts, string.format( "%s[%d] => %s", child_indent_str, i, dump ) )
                         else
@@ -713,35 +738,40 @@ local function var_dump_internal( value, depth, indent, seen_tables, userdata_an
     local is_full_date_time = false
     local is_lua_sex_info_part = false
     local is_mutation_info = false
+    local is_texture_info = false
+    local count_values = countEntries( value )
     
     if isColorTable( value ) then
-        table_header = "table(Color) {"
+        table_header = string.format( "table(Color:%d) {", count_values )
     elseif isGamePositionTable( value ) then
-        table_header = "table(GamePosition) {"
+        table_header = string.format( "table(GamePosition:%d) {", count_values )
     elseif isWidgetPlacementTable( value ) then
-        table_header = "table(WidgetPlacementLua) {"
+        table_header = string.format( "table(WidgetPlacementLua:%d) {", count_values )
         is_widget_placement = true
     elseif isGeodataTable( value ) then
-        table_header = "table(Geodata) {"
+        table_header = string.format( "table(Geodata:%d) {", count_values )
     elseif isInnateStatSecondaryTable( value ) then
-        table_header = "table(InnateStatSecondary) {"
+        table_header = string.format( "table(InnateStatSecondary:%d) {", count_values )
     elseif isLuaFullDateTimeTable( value ) then
-        table_header = "table(LuaFullDateTime) {"
+        table_header = string.format( "table(LuaFullDateTime:%d) {", count_values )
         is_full_date_time = true
     elseif isLuaRaceClassInfoPartTable( value ) then
-        table_header = "table(LuaRaceClassInfoPart) {"
+        table_header = string.format( "table(LuaRaceClassInfoPart:%d) {", count_values )
     elseif isLuaSexInfoPartTable( value ) then
-        table_header = "table(LuaSexInfoPart) {"
+        table_header = string.format( "table(LuaSexInfoPart:%d) {", count_values )
         is_lua_sex_info_part = true
     elseif isMutationInfoTable( value ) then
-        table_header = "table(MutationInfo) {"
+        table_header = string.format( "table(MutationInfo:%d) {", count_values )
         is_mutation_info = true
+    elseif isTextureInfoTable( value ) then
+        table_header = string.format( "table(%d) {", count_values )
+        is_texture_info = true
     elseif ENABLE_TWIDGET and IsTWidget( value ) then -- Вывод особой таблицы TWidget
         local raw_widget = value:GetRaw()
-        local dump = var_dump_internal( raw_widget, depth - 1, indent, seen_tables, userdata_ancestors):gsub( "userdata%(", "TWidget(", 1 )
+        local dump = var_dump_internal( raw_widget, depth - 1, indent, seen_tables, userdata_ancestors ):gsub( "userdata%(", "TWidget(", 1 )
         return dump
     else
-        table_header = string.format( "table(%d) {", countEntries( value ) )
+        table_header = string.format( "table(%d) {", count_values )
     end
     --------------------------------------------------------------------------------
 
@@ -809,6 +839,10 @@ local function var_dump_internal( value, depth, indent, seen_tables, userdata_an
             -- Если таблица MutationInfo
             local constName = ENUM_ZONE_TIER_DIFFICULTY_MAP[v] or "unknown"
             dump = string.format( "number(%s(%d))", constName, v )
+        elseif is_texture_info and type( v ) == "number" and k == "type" then
+            -- Если таблица TextureInfo
+            local constName = TEXTURE_TYPE_MAP[v] or "UNKNOWN"
+            dump = string.format( "number(%s:%d)", constName, v )
         end
         --------------------------------------------------------------------------------
         if not dump then
