@@ -19,7 +19,7 @@
 --- @type ComponentPropertyId
 --- @type ValuedText
 --------------------------------------------------------------------------------
---var_dump( avatar.GetAlchemyInfo().recipes[0] )
+--var_dump( avatar.GetAlchemyInfo() )
 
 --------------------------------------------------------------------------------
 --- @type AbilityId
@@ -142,7 +142,7 @@ var_dump( categories, tutorialIds ) ]]
 --- Тест на цикличность
 --------------------------------------------------------------------------------
 --[[ local a = { w = userMods.ToWString( "rrr" ), d = nil}
-local b = { c = a.w }
+local b = { c = a.w, a = a }
 a.d = b
 var_dump( a ) ]]
 
