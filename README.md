@@ -1,6 +1,6 @@
 # var_dump
 
-Функция выводит структурированную информацию о переменной или нескольких входных данных, что содержится, какие типы, какова структура.
+Инструмент отладки для вывода структурированной информации о переменных: содержимое, типы данных и вложенная структура. Поддерживает передачу нескольких аргументов.
 
 ```lua
 var_dump( value: any, ... )
@@ -11,6 +11,12 @@ var_dump( value: any, ... )
 `Меню` - `Интерфейс` - `Общие настройки` - `Запись ошибок пользовательских дополнений`
 
 Аллоды Онлайн\Personal\Logs\mods.txt
+
+**Ограничения:**
+
+```lua
+common.LogInfo( "common", info ) -- Ограничение 64000 символов.
+```
 
 **Стандартные настройки:**
 
@@ -43,7 +49,7 @@ local __CONFIG_VAR_DUMP = {
 
 ---
 
-## Определение статических таблиц
+## Идентификация статических таблиц
 
 ```lua
 -- table(WidgetPlacementLua:N) { ... }
@@ -219,22 +225,28 @@ var_dump( common.GetAddonMainForm( "UserAddon/LibreAlchemyV2" ) )
 
 ```lua
 ======================BEGIN======================
-userdata(WidgetForm)#0x26a18ba8 = {
-    GetDebugInfo = string(136) "[114070][WidgetForm]: (UserAddon/LibreAlchemyV2)->mainForm, Resource: Mods/Addons/LibreAlchemyV2/Widgets/LibreAlchemyV2.(WidgetForm).xdb"
+userdata(WidgetForm)#0x3bb59ed8 = {
+    GetDebugInfo = string(136) "[192735][WidgetForm]: (UserAddon/LibreAlchemyV2)->mainForm, Resource: Mods/Addons/LibreAlchemyV2/Widgets/LibreAlchemyV2.(WidgetForm).xdb"
     GetAddonType = number(ENUM_ADDON_TYPE_USER(1))
-    GetId = number(114070)
+    GetId = number(192735)
     GetAddonName = string(24) "UserAddon/LibreAlchemyV2"
     GetName = string(14) "LibreAlchemyV2"
     GetPriority = number(10000)
     GetNamedChildren = table(1) {
-        [1] => userdata(WidgetPanel)#0x26a16068 = {
-            GetDebugInfo = string(137) "[114071][WidgetPanel]: (UserAddon/LibreAlchemyV2)->mainForm.wtPanel, Resource: Mods/Addons/LibreAlchemyV2/Widgets/Panel.(WidgetPanel).xdb"
+        [1] => userdata(WidgetPanel)#0x3bb689d8 = {
+            GetDebugInfo = string(137) "[192736][WidgetPanel]: (UserAddon/LibreAlchemyV2)->mainForm.wtPanel, Resource: Mods/Addons/LibreAlchemyV2/Widgets/Panel.(WidgetPanel).xdb"
             GetAddonType = number(ENUM_ADDON_TYPE_USER(1))
-            GetId = number(114071)
+            GetId = number(192736)
             GetAddonName = string(24) "UserAddon/LibreAlchemyV2"
             GetName = string(5) "Panel"
             GetPriority = number(0)
-            GetBackgroundTexture = table(5) {
+            GetBackgroundColor = table(Color:4) {
+                ["a"] => number(1)
+                ["b"] => number(1)
+                ["g"] => number(1)
+                ["r"] => number(1)
+            }
+            GetBackgroundTexture = table(TextureInfo:5) {
                 ["binaryFile"] => string(72) "Mods/Addons/LibreAlchemyV2/Widgets/Text/Textures/Tooltip.(UITexture).bin"
                 ["realHeight"] => number(84)
                 ["realWidth"] => number(84)
@@ -242,30 +254,30 @@ userdata(WidgetForm)#0x26a18ba8 = {
                 ["xdbFile"] => string(72) "Mods/Addons/LibreAlchemyV2/Widgets/Text/Textures/Tooltip.(UITexture).xdb"
             }
             GetNamedChildren = table(1) {
-                [1] => userdata(WidgetTextContainer)#0x26a18350 = {
-                    GetDebugInfo = string(168) "[114072][WidgetTextContainer]: (UserAddon/LibreAlchemyV2)->mainForm.wtPanel.wtouText, Resource: Mods/Addons/LibreAlchemyV2/Widgets/Text/ouText.(WidgetTextContainer).xdb"
+                [1] => userdata(WidgetTextContainer)#0x3b989ae8 = {
+                    GetDebugInfo = string(168) "[192737][WidgetTextContainer]: (UserAddon/LibreAlchemyV2)->mainForm.wtPanel.wtouText, Resource: Mods/Addons/LibreAlchemyV2/Widgets/Text/ouText.(WidgetTextContainer).xdb"
                     GetAddonType = number(ENUM_ADDON_TYPE_USER(1))
-                    GetId = number(114072)
+                    GetId = number(192737)
                     GetAddonName = string(24) "UserAddon/LibreAlchemyV2"
                     GetName = string(6) "ouText"
                     GetPriority = number(0)
                     GetNamedChildren = table(1) {
-                        [1] => userdata(WidgetPanel)#0x269fdfe0 = {
-                            GetDebugInfo = string(99) "[114073][RD]: (UserAddon/LibreAlchemyV2)->mainForm.wtPanel.wtouText.wt__Border, Resource: [Runtime]"
+                        [1] => userdata(WidgetPanel)#0x3bafe708 = {
+                            GetDebugInfo = string(99) "[192738][RD]: (UserAddon/LibreAlchemyV2)->mainForm.wtPanel.wtouText.wt__Border, Resource: [Runtime]"
                             GetAddonType = number(ENUM_ADDON_TYPE_USER(1))
-                            GetId = number(114073)
+                            GetId = number(192738)
                             GetAddonName = string(24) "UserAddon/LibreAlchemyV2"
                             GetName = string(8) "__Border"
                             GetPriority = number(0)
                             GetNamedChildren = table(1) {
-                                [1] => userdata(WidgetPanel)#0x269fe868 = {
-                                    GetDebugInfo = string(111) "[114074][RD]: (UserAddon/LibreAlchemyV2)->mainForm.wtPanel.wtouText.wt__Border.wt__Content, Resource: [Runtime]"
+                                [1] => userdata(WidgetPanel)#0x3bbbbd08 = {
+                                    GetDebugInfo = string(111) "[192739][RD]: (UserAddon/LibreAlchemyV2)->mainForm.wtPanel.wtouText.wt__Border.wt__Content, Resource: [Runtime]"
                                     GetAddonType = number(ENUM_ADDON_TYPE_USER(1))
-                                    GetId = number(114074)
+                                    GetId = number(192739)
                                     GetAddonName = string(24) "UserAddon/LibreAlchemyV2"
                                     GetName = string(9) "__Content"
                                     GetPriority = number(0)
-                                    GetParent = userdata(WidgetPanel)#0x269fe868 = { GetName = "__Border" }
+                                    GetParent = userdata(WidgetPanel)#0x3bbbdda0 = { GetName = "__Border" }
                                     IsEnabled = boolean(true)
                                     IsEnabledEx = boolean(true)
                                     IsVisible = boolean(true)
@@ -288,7 +300,7 @@ userdata(WidgetForm)#0x26a18ba8 = {
                                     }
                                 }
                             }
-                            GetParent = userdata(WidgetTextContainer)#0x269fdfe0 = { GetName = "ouText" }
+                            GetParent = userdata(WidgetTextContainer)#0x3bbb3028 = { GetName = "ouText" }
                             IsEnabled = boolean(true)
                             IsEnabledEx = boolean(true)
                             IsVisible = boolean(true)
@@ -311,7 +323,7 @@ userdata(WidgetForm)#0x26a18ba8 = {
                             }
                         }
                     }
-                    GetParent = userdata(WidgetPanel)#0x26a18350 = { GetName = "Panel" }
+                    GetParent = userdata(WidgetPanel)#0x3bbc2b88 = { GetName = "Panel" }
                     IsEnabled = boolean(true)
                     IsEnabledEx = boolean(true)
                     IsVisible = boolean(true)
@@ -334,7 +346,7 @@ userdata(WidgetForm)#0x26a18ba8 = {
                     }
                 }
             }
-            GetParent = userdata(WidgetForm)#0x26a16068 = { GetName = "LibreAlchemyV2" }
+            GetParent = userdata(WidgetForm)#0x3bbd6000 = { GetName = "LibreAlchemyV2" }
             IsEnabled = boolean(true)
             IsEnabledEx = boolean(true)
             IsVisible = boolean(true)
