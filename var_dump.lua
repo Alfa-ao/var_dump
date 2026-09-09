@@ -11,7 +11,7 @@ local DEFAULT_CONFIG_VAR_DUMP = {
         GetPlacementPlain = true,
         GetSmartPlacementPlain = false,
         GetRealRect = false,
-        GetNamedChildren = true, -- false: Использовать только имена, иначе может забить весь лог до ограничения
+        GetNamedChildren = false, -- false: Использовать только имена, иначе может забить весь лог до ограничения
         IsEnabled = true,
         IsEnabledEx = true,
         IsVisible = true,
@@ -21,7 +21,7 @@ local DEFAULT_CONFIG_VAR_DUMP = {
         GetOnlyInfo = false, -- true: Использовать только метод ResourceId:GetInfo
     },
     USERDATA = {
-        hexadecimal = true, -- Показывать адрес хранения #0x0f810b80. userdata(name)#0x0f810b80 = { ... }
+        hexadecimal = false, -- Показывать адрес хранения #0x0f810b80. userdata(name)#0x0f810b80 = { ... }
     },
     TABLE = {
         tableIdentification = true, -- Распознать таблицу и присвоить ей имя. table (Color) { ... }
