@@ -98,10 +98,10 @@ table(12) {
     ["drumSize"] => number(24)
     ["drumsCount"] => number(0)
     ["finished"] => boolean(false)
-    ["id"] => userdata(SkillId)#0x269f4a08 = {
+    ["id"] => userdata(SkillId)#0x3bb5b280 = {
         GetInfo = table(7) {
             ["description"] => WString(261) "Ремесло, которое позволяет создавать зелья различного действия. С их помощью на некоторое время можно улучшить характеристики персонажа, восстановить здоровье, защититься от урона или злых чар противника, увеличить наносимый урон или наложить негативный эффект."
-            ["image"] => userdata(UITextureId)#0x269cd3a8 = {}
+            ["image"] => userdata(UITextureId)#0x3bbb2288 = {}
             ["name"] => WString(7) "Алхимия"
             ["sysName"] => string(7) "Alchemy"
             ["sysType"] => string(22) "ENUM_SkillType_Alchemy"
@@ -113,68 +113,68 @@ table(12) {
     ["perfectBonus"] => number(0)
     ["reactionInited"] => boolean(false)
     ["recipes"] => table(250) {
-        [0] => userdata(RecipeId)#0x269f8b58 = {
+        [0] => userdata(RecipeId)#0x3bb5a1a0 = {
             avatar.GetRecipeInfo = table(12) {
                 ["bindResult"] => boolean(false)
                 ["components"] => table(5) {
-                    [0] => userdata(ComponentPropertyId)#0x26a1bda8 = {
+                    [0] => userdata(ComponentPropertyId)#0x3bbbd4c8 = {
                         avatar.GetComponentInfo = table(4) {
                             ["description"] => WString(0) ""
                             ["id"] => userdata(ComponentPropertyId) = *RECURSION*
-                            ["image"] => userdata(UITextureId)#0x26a1d508 = {}
-                            ["name"] => WString(10) "Отравление"
+                            ["image"] => userdata(UITextureId)#0x3bbbf188 = {}
+                            ["name"] => WString(8) "Скорость"
                         }
                     }
-                    [1] => userdata(ComponentPropertyId)#0x26a1bde8 = {
+                    [1] => userdata(ComponentPropertyId)#0x3bbbd508 = {
                         avatar.GetComponentInfo = table(4) {
                             ["description"] => WString(0) ""
                             ["id"] => userdata(ComponentPropertyId) = *RECURSION*
-                            ["image"] => userdata(UITextureId)#0x26a20548 = {}
-                            ["name"] => WString(6) "Распад"
+                            ["image"] => userdata(UITextureId)#0x3bbc23d8 = {}
+                            ["name"] => WString(14) "Жизненная сила"
                         }
                     }
-                    [2] => userdata(ComponentPropertyId)#0x26a1be28 = {
+                    [2] => userdata(ComponentPropertyId)#0x3bbbd548 = {
                         avatar.GetComponentInfo = table(4) {
                             ["description"] => WString(0) ""
                             ["id"] => userdata(ComponentPropertyId) = *RECURSION*
-                            ["image"] => userdata(UITextureId)#0x26a22748 = {}
-                            ["name"] => WString(10) "Отравление"
+                            ["image"] => userdata(UITextureId)#0x3bbc49f8 = {}
+                            ["name"] => WString(9) "Медитация"
                         }
                     }
-                    [3] => userdata(ComponentPropertyId)#0x26a1be68 = {
+                    [3] => userdata(ComponentPropertyId)#0x3bbbd588 = {
                         avatar.GetComponentInfo = table(4) {
                             ["description"] => WString(0) ""
                             ["id"] => userdata(ComponentPropertyId) = *RECURSION*
-                            ["image"] => userdata(UITextureId)#0x26a24848 = {}
-                            ["name"] => WString(10) "Поднебесье"
+                            ["image"] => userdata(UITextureId)#0x3bbc6fc8 = {}
+                            ["name"] => WString(5) "Пламя"
                         }
                     }
-                    [4] => userdata(ComponentPropertyId)#0x26a1bed8 = {
+                    [4] => userdata(ComponentPropertyId)#0x3bbbd5f8 = {
                         avatar.GetComponentInfo = table(4) {
                             ["description"] => WString(0) ""
                             ["id"] => userdata(ComponentPropertyId) = *RECURSION*
-                            ["image"] => userdata(UITextureId)#0x26a26b40 = {}
-                            ["name"] => WString(10) "Волшебство"
+                            ["image"] => userdata(UITextureId)#0x3bbc9610 = {}
+                            ["name"] => WString(11) "Жар пустыни"
                         }
                     }
                 }
-                ["defaultItem"] => number(28216)
-                ["description"] => userdata(ValuedText)#0x26a1bba8 = {
-                    ToWString = WString(129) "Отравляет цель, нанося периодический урон ядом каждые 2 сек. в течение 8 сек. Имеет общее время восстановления с боевыми зельями."
+                ["defaultItem"] => number(276580)
+                ["description"] => userdata(ValuedText)#0x3bbbd2c8 = {
+                    ToWString = WString(116) "Увеличивает скорость передвижения в мирной обстановке. Имеет общее время восстановления со вспомогательными зельями."
                 }
                 ["id"] => userdata(RecipeId) = *RECURSION*
-                ["image"] => userdata(UITextureId)#0x26a1bbe8 = {}
-                ["name"] => WString(25) "Склянка с астральным ядом"
+                ["image"] => userdata(UITextureId)#0x3bbbd308 = {}
+                ["name"] => WString(27) "Джиннский эликсир марафонца"
                 ["nextRecipePoints"] => number(0)
                 ["resultItems"] => table(1) {
-                    [0] => number(28216)
+                    [0] => number(276580)
                 }
-                ["resultQuantity"] => number(5)
-                ["score"] => number(67)
-                ["skillId"] => userdata(SkillId)#0x26a1bcf0 = {
+                ["resultQuantity"] => number(1)
+                ["score"] => number(93)
+                ["skillId"] => userdata(SkillId)#0x3bbbd410 = {
                     GetInfo = table(7) {
                         ["description"] => WString(261) "Ремесло, которое позволяет создавать зелья различного действия. С их помощью на некоторое время можно улучшить характеристики персонажа, восстановить здоровье, защититься от урона или злых чар противника, увеличить наносимый урон или наложить негативный эффект."
-                        ["image"] => userdata(UITextureId)#0x26a2df40 = {}
+                        ["image"] => userdata(UITextureId)#0x3bbd1228 = {}
                         ["name"] => WString(7) "Алхимия"
                         ["sysName"] => string(7) "Alchemy"
                         ["sysType"] => string(22) "ENUM_SkillType_Alchemy"
