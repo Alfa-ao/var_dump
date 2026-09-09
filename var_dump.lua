@@ -1,13 +1,17 @@
+-- test Global( "__CONFIG_VAR_DUMP", {} )
+
+-- ( DEFAULT не трогать. Юзать __CONFIG_VAR_DUMP = {...} )
 -- Включение и настройка опций для участия дамба
-local __CONFIG_VAR_DUMP = type( rawget( _G, "__CONFIG_VAR_DUMP" ) ) == "table" and __CONFIG_VAR_DUMP or {
+local DEFAULT_CONFIG_VAR_DUMP = {
     DEBUG = {
-        depth = 10 -- Максимальная глубина рекурсии. table(...) { 1 => table(...) { 1 => И т.д.. } }
+        version = "v1.5",
+        depth = 10, -- Максимальная глубина рекурсии. table(...) { 1 => table(...) { 1 => И т.д.. } }
     },
     WIDGET = {
         GetPlacementPlain = true,
         GetSmartPlacementPlain = false,
         GetRealRect = false,
-        GetNamedChildren = false, -- false: Использовать только имена, иначе может забить весь лог до ограничения
+        GetNamedChildren = true, -- false: Использовать только имена, иначе может забить весь лог до ограничения
         IsEnabled = true,
         IsEnabledEx = true,
         IsVisible = true,
@@ -17,18 +21,54 @@ local __CONFIG_VAR_DUMP = type( rawget( _G, "__CONFIG_VAR_DUMP" ) ) == "table" a
         GetOnlyInfo = false, -- true: Использовать только метод ResourceId:GetInfo
     },
     USERDATA = {
-        hexadecimal = false, -- Показывать адрес хранения #0x0f810b80. userdata(name)#0x0f810b80 = { ... }
+        hexadecimal = true, -- Показывать адрес хранения #0x0f810b80. userdata(name)#0x0f810b80 = { ... }
     },
     TABLE = {
         tableIdentification = true, -- Распознать таблицу и присвоить ей имя. table (Color) { ... }
     },
 }
 
+--- Совмещение default и юзер таблицы конфига
+--- @param base table Дефолт таблица
+--- @param source table user custom table
+--- @return table
+local function deepMerge( base, source )
+    local result = {}
+    
+    for k, v in pairs( base ) do
+        if type( v ) == "table" and type( source[k] ) == "table" then
+            result[k] = deepMerge( v, source[k] )
+        else
+            result[k] = v
+        end
+    end
+    
+    for k, v in pairs( source ) do
+        if result[k] == nil then
+            result[k] = v
+        end
+    end
+    
+    return result
+end
+
+local user_config = rawget( _G, "__CONFIG_VAR_DUMP" )
+if type( user_config ) == "table" then
+    if not user_config.DEBUG or user_config.DEBUG.version ~= DEFAULT_CONFIG_VAR_DUMP.DEBUG.version then
+        common.LogInfo( "common", 
+            "[var_dump] Warning: Your __CONFIG_VAR_DUMP is outdated. " ..
+            "Please update to version " .. DEFAULT_CONFIG_VAR_DUMP.DEBUG.version
+        )
+    end
+end
+
+local __CONFIG_VAR_DUMP = deepMerge( DEFAULT_CONFIG_VAR_DUMP, user_config or {} )
+
 -- Если появился тип TWidget
 local ENABLE_TWIDGET = type( rawget( _G, "IsTWidget" ) ) == "function"
 
 --------------------------------------------------------------------------------
--- Маппинг констант вместо значений.
+-- Маппинг констант взамен значений.
 --------------------------------------------------------------------------------
 
 -- Маппинг для WidgetSafe:GetAddonType
@@ -128,7 +168,7 @@ local ENUM_ZONE_TIER_DIFFICULTY_MAP = {
     [ZONE_TIER_DIFFICULTY_INSANE] = "ZONE_TIER_DIFFICULTY_INSANE",
 }
 
--- Маппинг констант для (TextureInfo)
+-- Маппинг для (TextureInfo). В кодовом API таких констант не существует. Только для текстурных виджетов.
 local TEXTURE_TYPE_MAP = {
     [0] = "DXT1",
     [1] = "DXT3",
@@ -153,7 +193,7 @@ local function createTableValidator( schema )
     local expected_count = countEntries( schema )
 
     return function( tbl )
-        if not __CONFIG_VAR_DUMP.TABLE.tableIdentification or type( tbl ) ~= "table" then
+        if type( tbl ) ~= "table" then
             return false
         end
 
@@ -194,12 +234,12 @@ local function createTableValidator( schema )
             found[k] = true
         end
 
-        -- Если кол-во ключей не совпадает
+        -- Кол-во ключей не совпадает
         if count ~= expected_count then
             return false
         end
 
-        -- Все ли ключи присутствуют
+        -- Нужные ключи не присутствуют
         for k in pairs( schema ) do
             if not found[k] then
                 return false
@@ -211,82 +251,123 @@ local function createTableValidator( schema )
 end
 
 --------------------------------------------------------------------------------
--- Переопределение функций проверки на статическую таблицу
+--- Каждая таблица содержит:
+--- name - имя типа для заголовка
+--- schema - схема полей типизации для createTableValidator
+--- fieldMappers - маппинг полей (необязательно)
+--- customFormatter - кастомная форматировка (необязательно)
 --------------------------------------------------------------------------------
-
--- Проверка на таблицу (Color)
-local isColorTable = createTableValidator {
-    r = function( v ) return type( v ) == "number" and v >= 0 and v <= 1 end,
-    g = function( v ) return type( v ) == "number" and v >= 0 and v <= 1 end,
-    b = function( v ) return type( v ) == "number" and v >= 0 and v <= 1 end,
-    a = function( v ) return type( v ) == "number" and v >= 0 and v <= 1 end,
+local TABLE_TYPES = {
+    {
+        name = "Color",
+        schema = {
+            r = function( v ) return type( v ) == "number" and v >= 0 and v <= 1 end,
+            g = function( v ) return type( v ) == "number" and v >= 0 and v <= 1 end,
+            b = function( v ) return type( v ) == "number" and v >= 0 and v <= 1 end,
+            a = function( v ) return type( v ) == "number" and v >= 0 and v <= 1 end,
+        },
+    },
+    {
+        name = "GamePosition",
+        schema = {
+            posX = { "number" }, posY = { "number" }, posZ = { "number" },
+        },
+    },
+    {
+        name = "WidgetPlacementLua",
+        schema = {
+            alignX = { "number" }, alignY = { "number" },
+            highPosX = { "number" }, highPosY = { "number" },
+            posX = { "number" }, posY = { "number" },
+            sizeX = { "number" }, sizeY = { "number" },
+            sizingX = { "number" }, sizingY = { "number" },
+        },
+        fieldMappers = {
+            alignX = WIDGET_ALIGN_MAP,
+            alignY = WIDGET_ALIGN_MAP,
+            sizingX = WIDGET_SIZING_MAP,
+            sizingY = WIDGET_SIZING_MAP,
+        },
+    },
+    {
+        name = "Geodata",
+        schema = {
+            x = { "number" }, y = { "number" },
+            width = { "number" }, height = { "number" },
+        },
+    },
+    {
+        name = "InnateStatSecondary",
+        schema = {
+            N1 = { "number" }, N2 = { "number" }, N3 = { "number" }, N4 = { "number" },
+            isLow = { "boolean" }, isReduced = { "boolean" },
+        },
+    },
+    {
+        name = "LuaFullDateTime",
+        schema = {
+            y = { "number" }, m = { "number" }, d = { "number" },
+            h = { "number" }, min = { "number" }, s = { "number" }, ms = { "number" },
+            wday = { "number" }, month = { "number" },
+            sysMonth = { "string" }, overallMs = { "number" },
+        },
+        fieldMappers = {
+            wday = ENUM_DAY_OF_WEEK_MAP,
+            month = ENUM_MONTH_MAP,
+        },
+    },
+    {
+        name = "LuaRaceClassInfoPart",
+        schema = {
+            sysName = { "string" }, name = { "WString" }, description = { "WString" },
+            sysClassName = { "string" }, className = { "WString" },
+            sysRaceName = { "string" }, raceName = { "WString" },
+        },
+    },
+    {
+        name = "LuaSexInfoPart",
+        schema = {
+            sex = { "number" },
+            name = { "WString" },
+            raceSexName = { "WString" },
+        },
+        fieldMappers = {
+            sex = ENUM_SEX_MAP,
+        },
+    },
+    {
+        name = "MutationInfo",
+        schema = {
+            difficulty = { "number" },
+            population = { "number" },
+            buffId = { "BuffId" },
+        },
+        fieldMappers = {
+            difficulty = ENUM_ZONE_TIER_DIFFICULTY_MAP,
+        },
+    },
+    {
+        name = "TextureInfo",
+        schema = {
+            binaryFile = { "string" },
+            realHeight = { "number" },
+            realWidth = { "number" },
+            type = { "number" },
+            xdbFile = { "string" },
+        },
+        -- number(DXT1:0) вместо number(DXT1(0))
+        customFormatter = function( k, v )
+            if k == "type" and type( v ) == "number" then
+                local constName = TEXTURE_TYPE_MAP[v] or "UNKNOWN"
+                return string.format( "number(%s:%d)", constName, v )
+            end
+        end,
+    },
 }
 
--- Проверка на таблицу (GamePosition)
-local isGamePositionTable = createTableValidator {
-    posX = { "number" },
-    posY = { "number" },
-    posZ = { "number" },
-}
-
--- Проверка на таблицу (WidgetPlacementLua)
-local isWidgetPlacementTable = createTableValidator {
-    alignX = { "number" }, alignY = { "number" },
-    highPosX = { "number" }, highPosY = { "number" },
-    posX = { "number" }, posY = { "number" },
-    sizeX = { "number" }, sizeY = { "number" },
-    sizingX = { "number" }, sizingY = { "number" },
-}
-
--- Проверка на таблицу (Geodata)
-local isGeodataTable = createTableValidator {
-    x = { "number" }, y = { "number" },
-    width = { "number" }, height = { "number" },
-}
-
--- Проверка на таблицу (InnateStatSecondary)
-local isInnateStatSecondaryTable = createTableValidator {
-    N1 = { "number" }, N2 = { "number" }, N3 = { "number" }, N4 = { "number" },
-    isLow = { "boolean" }, isReduced = { "boolean" },
-}
-
--- Проверка на таблицу (LuaFullDateTime)
-local isLuaFullDateTimeTable = createTableValidator {
-    y = { "number" }, m = { "number" }, d = { "number" },
-    h = { "number" }, min = { "number" }, s = { "number" }, ms = { "number" },
-    wday = { "number" }, month = { "number" },
-    sysMonth = { "string" }, overallMs = { "number" },
-}
-
--- Проверка на таблицу (LuaRaceClassInfoPart)
-local isLuaRaceClassInfoPartTable = createTableValidator {
-    sysName = { "string" },  name = { "WString" }, description = { "WString" },
-    sysClassName = { "string" }, className = { "WString" },
-    sysRaceName = { "string" }, raceName = { "WString" },
-}
-
--- Проверка на таблицу (LuaSexInfoPart)
-local isLuaSexInfoPartTable = createTableValidator {
-    sex = { "number" },
-    name = { "WString" },
-    raceSexName = { "WString" },
-}
-
--- Проверка на таблицу (MutationInfo)
-local isMutationInfoTable = createTableValidator {
-    difficulty = { "number" },
-    population = { "number" },
-    buffId = { "BuffId" },
-}
-
--- Проверка на таблицу (TextureInfo)
-local isTextureInfoTable = createTableValidator {
-    binaryFile = { "string" },
-    realHeight = { "number" },
-    realWidth = { "number" },
-    type = { "number" },
-    xdbFile = { "string" },
-}
+for _, desc in ipairs( TABLE_TYPES ) do
+    desc.validator = createTableValidator( desc.schema )
+end
 
 --------------------------------------------------------------------------------
 
@@ -321,19 +402,14 @@ local RESOURCE_INFO_MAP = {
 
 --- Выводит содержимое переменной с типами и структурой.
 --- @param value any Переменная для дампа
---- @param depth? integer Максимальная глубина рекурсии (по умолчанию 10)
---- @param indent? integer Текущий отступ, внутреннее
---- @param seen_tables? table Таблица для отслеживания циклических ссылок, внутреннее
---- @param userdata_ancestors? table ///
+--- @param ctx table Контекст рекурсии { depth, indent, seen, ancestors }
+--- @param inline? boolean Если true, не добавляет отступ к первой строке
 --- @return string
-local function var_dump_internal( value, depth, indent, seen_tables, userdata_ancestors )
-    depth = depth or __CONFIG_VAR_DUMP.DEBUG.depth
-    indent = indent or 0
-    seen_tables = seen_tables or {}
-    userdata_ancestors = userdata_ancestors or {}
-    
+local function var_dump_internal( value, ctx, inline )
     local indent_mode = "    "
-    local indent_str = string.rep( indent_mode, indent )
+    local indent_str = string.rep( indent_mode, ctx.indent )
+    local header_indent = inline and "" or indent_str
+    
     local type_str = apitype( value )
     local native_type = type( value )
     
@@ -341,37 +417,57 @@ local function var_dump_internal( value, depth, indent, seen_tables, userdata_an
     local is_userdata = ( native_type == "userdata" and type_str ~= "WString" )
     local is_light_userdata = ( native_type == "userdata" and type_str == "userdata" )
     
+    --- Add рекурсивный дамп.
+    local function ctxAdd( ctx, key, val )
+        local dump = var_dump_internal( val, ctx, true )
+        table.insert( ctx.parts, ctx.new_indent .. key .. " = " .. dump )
+    end
+
+    --- Add отформатированную строку.
+    local function ctxAddRaw( ctx, key, formatted_val )
+        table.insert( ctx.parts, ctx.new_indent .. key .. " = " .. formatted_val )
+    end
+    
     -- проверка на циклические ссылки
-    if is_table and seen_tables[ value ] then
-        return indent_str .. string.format( "%s(0) = *RECURSION*", native_type )
+    if is_table and ctx.seen[ value ] then
+        return header_indent .. string.format( "%s(0) = *RECURSION*", native_type )
     end
-    if is_userdata and not is_light_userdata and userdata_ancestors[ value ] then
-        return indent_str .. string.format( "%s(%s) = *RECURSION*", native_type, type_str )
+    
+    if is_userdata and not is_light_userdata and ctx.ancestors[ value ] then
+        return header_indent .. string.format( "%s(%s) = *RECURSION*", native_type, type_str )
     end
-
-    -- Посещенные
-    if is_table then seen_tables[ value ] = true end
-    if is_userdata and not is_light_userdata then userdata_ancestors[ value ] = true end
-
+    
+    -- set на посещение
+    if is_table then ctx.seen[ value ] = true end
+    if is_userdata and not is_light_userdata then ctx.ancestors[ value ] = true end
+    
     -- для очистки userdata из пути рекурсии
     local function finish( result )
         if is_userdata and not is_light_userdata then
-            userdata_ancestors[ value ] = nil
+            ctx.ancestors[ value ] = nil
         end
         return result
     end
     
     -- nil. Если таблица { name = nil }, то вернёт пустую {}у
     if value == nil then
-        return indent_str .. "nil"
+        return header_indent .. "nil"
     end
+    
+    local block_ctx = {
+        depth = ctx.depth - 1,
+        indent = ctx.indent + 1,
+        seen = ctx.seen,
+        ancestors = ctx.ancestors,
+        parts = {},
+        new_indent = string.rep( indent_mode, ctx.indent + 1 )
+    }
     
     --------------------------------------------------------------------------------
     -- string, number, boolean, function, light userdata, userdata( apitype ), thread
     --------------------------------------------------------------------------------
     if native_type ~= "table" then
-        local prefix = indent_str .. type_str
-        
+        local prefix = header_indent .. type_str
         if native_type == "string" then
             return string.format( '%s(%d) "%s"', prefix, #value, escaped( value ) )
         elseif native_type == "number" then
@@ -381,7 +477,6 @@ local function var_dump_internal( value, depth, indent, seen_tables, userdata_an
         elseif native_type == "function" then
             return string.format( "%s(%s)", prefix, tostring( value ) )
         elseif native_type == "userdata" then
-            local new_indent_str = string.rep( indent_mode, indent + 1 )
             local address = ""
             
             if __CONFIG_VAR_DUMP.USERDATA.hexadecimal or is_light_userdata then
@@ -390,27 +485,21 @@ local function var_dump_internal( value, depth, indent, seen_tables, userdata_an
             --------------------------------------------------------------------------------
             -- light userdata
             if is_light_userdata then
-                return indent_str .. string.format( "light userdata(%s)", address )
+                return header_indent .. string.format( "light userdata(%s)", address )
             end
             --------------------------------------------------------------------------------
             if type_str == "WString" then
                 local str = userMods.FromWString( value )
                 return string.format( '%s(%d) "%s"', prefix, #str, escaped( str ) )
             elseif type_str == "FactoryCacheSafe" then
-                local parts = { indent_str .. string.format( "userdata(%s)%s = {", type_str, address ) }
+                block_ctx.parts = { header_indent .. string.format( "userdata(%s)%s = {", type_str, address ) }
                 --------------------------------------------------------------------------------
-                -- FactoryCacheSafe:IsValid
-                table.insert( parts, new_indent_str .. "IsValid = boolean(" .. tostring( value:IsValid() ) .. ")" )
+                ctxAdd( block_ctx, "IsValid", value:IsValid() )
+                ctxAdd( block_ctx, "GetId", value:GetId() )
+                ctxAdd( block_ctx, "GetDebugInfo", value:GetDebugInfo() )
                 --------------------------------------------------------------------------------
-                -- FactoryCacheSafe:GetId
-                table.insert( parts, new_indent_str .. "GetId = number(" .. tostring( value:GetId() ) .. ")" )
-                --------------------------------------------------------------------------------
-                -- FactoryCacheSafe:GetDebugInfo
-                local debugInfo = value:GetDebugInfo()
-                table.insert( parts, new_indent_str .. "GetDebugInfo = string(" .. #debugInfo .. ") \"" .. escaped( debugInfo ) .. "\"" )
-                --------------------------------------------------------------------------------
-                table.insert( parts, indent_str .. "}" )
-                return finish( table.concat( parts, "\n" ) )
+                table.insert( block_ctx.parts, indent_str .. "}" )
+                return finish( table.concat( block_ctx.parts, "\n" ) )
             elseif
                 type_str == "AbilityId" or -- avatar.GetAbilityInfo
                 type_str == "ActionGroupId" or -- GetInfo
@@ -472,247 +561,201 @@ local function var_dump_internal( value, depth, indent, seen_tables, userdata_an
                 type_str == "WishmasterResourceId" or -- GetInfo
                 type_str == "ZodiacSignId"
             then -- Один из ResourceId
-                local parts = { indent_str .. string.format( "userdata(%s)%s = {", type_str, address ) }
-                
+                block_ctx.parts = { header_indent .. string.format( "userdata(%s)%s = {", type_str, address ) }
                 local info_getter = RESOURCE_INFO_MAP[ type_str ]
+                --------------------------------------------------------------------------------
                 if not __CONFIG_VAR_DUMP.RESOURCE_ID.GetOnlyInfo and info_getter then
-                    local dump = var_dump_internal( info_getter.fn( value ), depth - 1, indent + 1, seen_tables, userdata_ancestors ):sub( #new_indent_str + 1 )
-                    table.insert( parts, new_indent_str .. info_getter.name .. " = " .. dump )
+                    ctxAdd( block_ctx, info_getter.name, info_getter.fn( value ) )
                 else
-                    -- ResourceId:GetInfo(): table
+                    -- ResourceId:GetInfo
                     local info = value:GetInfo()
                     if type( info ) == "table" and next( info ) ~= nil then
-                        local dump = var_dump_internal( info, depth - 1, indent + 1, seen_tables, userdata_ancestors ):sub( #new_indent_str + 1 )
-                        table.insert( parts, new_indent_str .. "GetInfo = " .. dump )
+                        ctxAdd( block_ctx, "GetInfo", info )
                     end
                 end
-                
-                table.insert( parts, ( #parts > 1 and indent_str or "" ) .. "}" )
-                return finish( table.concat( parts, ( #parts > 2 and "\n" or "" ) ) )
+                --------------------------------------------------------------------------------
+                table.insert( block_ctx.parts, ( #block_ctx.parts > 1 and indent_str or "" ) .. "}" )
+                return finish( table.concat( block_ctx.parts, ( #block_ctx.parts > 2 and "\n" or "" ) ) )
+                --------------------------------------------------------------------------------
             elseif type_str:sub( 1, 7 ) == "Widget_" then
-                -- Удаляет лишнее (Widget_FormSafe), получаем WidgetForm
                 local display_type = type_str:gsub( "_", "" ):gsub( "Safe$", "" )
-                local parts = { indent_str .. string.format( "userdata(%s)%s = {", display_type, address ) }
+                block_ctx.parts = { header_indent .. string.format( "userdata(%s)%s = {", display_type, address ) }
                 --------------------------------------------------------------------------------
-                -- WidgetSafe:GetDebugInfo
-                local GetDebugInfo = value:GetDebugInfo()
-                table.insert( parts, new_indent_str .. "GetDebugInfo = string(" .. #GetDebugInfo .. ") \"" .. GetDebugInfo .. "\"" )
+                ctxAdd( block_ctx, "GetDebugInfo", value:GetDebugInfo() )
                 --------------------------------------------------------------------------------
-                -- WidgetSafe:GetAddonType
-                local GetAddonType = value:GetAddonType()
-                local addonTypeStr = string.format( "number(%s(%d))", ENUM_ADDON_TYPE_MAP[ GetAddonType ] or "unknown", GetAddonType )
-                table.insert( parts, new_indent_str .. "GetAddonType = " .. addonTypeStr )
+                local addonType = value:GetAddonType()
+                ctxAddRaw( block_ctx, "GetAddonType", string.format( "number(%s(%d))", ENUM_ADDON_TYPE_MAP[addonType] or "unknown", addonType ) )
                 --------------------------------------------------------------------------------
-                -- WidgetSafe:GetId
-                table.insert( parts, new_indent_str .. "GetId = number(" .. value:GetId() .. ")" )
-                --------------------------------------------------------------------------------
-                -- WidgetSafe:GetAddonName
-                local GetAddonName = value:GetAddonName()
-                table.insert( parts, new_indent_str .. "GetAddonName = string(" .. #GetAddonName .. ") \"" .. GetAddonName .. "\"" )
-                --------------------------------------------------------------------------------
-                -- WidgetSafe:GetName
-                local GetName = value:GetName()
-                table.insert( parts, new_indent_str .. "GetName = string(" .. #GetName .. ") \"" .. GetName .. "\"" )
-                --------------------------------------------------------------------------------
-                -- WidgetSafe:GetPriority
-                table.insert( parts, new_indent_str .. "GetPriority = number(" .. value:GetPriority() .. ")" )
+                ctxAdd( block_ctx, "GetId", value:GetId() )
+                ctxAdd( block_ctx, "GetAddonName", value:GetAddonName() )
+                ctxAdd( block_ctx, "GetName", value:GetName() )
+                ctxAdd( block_ctx, "GetPriority", value:GetPriority() )
                 --------------------------------------------------------------------------------
                 -- WidgetSafe:GetBackgroundColor
-                local okColor, bgColor = pcall( value.GetBackgroundColor )
-                if okColor and bgColor ~= nil then
-                    local dump = var_dump_internal( bgColor, depth - 1, indent + 1, seen_tables, userdata_ancestors ):sub( #new_indent_str + 1 )
-                    table.insert( parts, new_indent_str .. "GetBackgroundColor = " .. dump )
-                end
-                --------------------------------------------------------------------------------
-                -- WidgetSafe:GetForegroundColor
-                -- pcall - достаточно проще, чем создавать список разрешённых виджетов и чекать потом.
-                -- GetForegroundColor - Can't get background color (Back layer not exist). Тоже самое с GetBackgroundColor
-                local okFgColor, fgColor = pcall( value.GetForegroundColor )
-                if okFgColor and fgColor ~= nil then
-                    local dump = var_dump_internal( fgColor, depth - 1, indent + 1, seen_tables, userdata_ancestors ):sub( #new_indent_str + 1 )
-                    table.insert( parts, new_indent_str .. "GetForegroundColor = " .. dump )
-                end
-                --------------------------------------------------------------------------------
                 -- WidgetSafe:GetBackgroundTexture
                 local hasBg = value:HasBackground()
                 if hasBg then
+                    local bgColor = value:GetBackgroundColor()
                     local bgTex = value:GetBackgroundTexture()
                     local texInfo = bgTex and common.GetTextureInfo( bgTex )
+                    
+                    if bgColor then
+                        ctxAdd( block_ctx, "GetBackgroundColor", bgColor )
+                    end
+                    
                     if texInfo then
-                        local dump = var_dump_internal( texInfo, depth - 1, indent + 1, seen_tables, userdata_ancestors ):sub( #new_indent_str + 1 )
-                        table.insert( parts, new_indent_str .. "GetBackgroundTexture = " .. dump )
-                    else
-                        table.insert( parts, new_indent_str .. "GetBackgroundTexture = \"No texture\"")
+                        ctxAdd( block_ctx, "GetBackgroundTexture", texInfo )
+                    else 
+                        ctxAddRaw( block_ctx, "GetBackgroundTexture", '"No texture"' )
                     end
                 end
                 --------------------------------------------------------------------------------
+                -- WidgetSafe:GetForegroundColor
                 -- WidgetSafe:GetForegroundTexture
                 local hasFg = value:HasForeground()
                 if hasFg then
+                    local fgColor = value:GetForegroundColor()
                     local fgTex = value:GetForegroundTexture()
                     local texInfo = fgTex and common.GetTextureInfo( fgTex )
+                    
+                    if fgColor then
+                        ctxAdd( block_ctx, "GetForegroundColor", fgColor )
+                    end
+                    
                     if texInfo then
-                        local dump = var_dump_internal( texInfo, depth - 1, indent + 1, seen_tables, userdata_ancestors ):sub( #new_indent_str + 1 )
-                        table.insert( parts, new_indent_str .. "GetForegroundTexture = " .. dump )
-                    else
-                        table.insert( parts, new_indent_str .. "GetForegroundTexture = \"No texture\"")
+                        ctxAdd( block_ctx, "GetForegroundTexture", texInfo )
+                    else 
+                        ctxAddRaw( block_ctx, "GetForegroundTexture", '"No texture"' )
                     end
                 end
                 --------------------------------------------------------------------------------
                 -- WidgetSafe:GetNamedChildren (только имена, ибо уйдет в цикличность)
                 local GetNamedChildren = value:GetNamedChildren()
                 if next( GetNamedChildren ) ~= nil then
-                    local child_indent_str = new_indent_str .. indent_mode
-                    local child_parts = { new_indent_str .. "GetNamedChildren = table(" .. #GetNamedChildren .. ") {" }
+                    local child_indent_str = block_ctx.new_indent .. indent_mode
+                    local child_parts = { block_ctx.new_indent .. "GetNamedChildren = table(" .. #GetNamedChildren .. ") {" }
                     for i, child in ipairs( GetNamedChildren ) do
                         if __CONFIG_VAR_DUMP.WIDGET.GetNamedChildren then
-                            local dump = var_dump_internal( child, depth - 1, indent + 2, seen_tables, userdata_ancestors ):sub( #child_indent_str + 1 )
+                            local child_ctx = { depth = block_ctx.depth, indent = ctx.indent + 2, seen = ctx.seen, ancestors = ctx.ancestors }
+                            local dump = var_dump_internal( child, child_ctx, true )
                             table.insert( child_parts, string.format( "%s[%d] => %s", child_indent_str, i, dump ) )
                         else
                             local child_display_type = apitype( child ):gsub( "_", "" ):gsub( "Safe$", "" )
                             local name_str = child:GetName()
+                            local child_address = ""
+                            
+                            if __CONFIG_VAR_DUMP.USERDATA.hexadecimal then
+                                child_address = "#0x" .. tostring( child ):match( "0x(%x+)" )
+                            end
+                            
                             table.insert( child_parts, string.format( 
                                 "%s[%d] => userdata(%s)%s = { GetName = string(%s) \"%s\" }", 
-                                child_indent_str, i, child_display_type, address, #name_str, name_str
+                                child_indent_str, i, child_display_type, child_address, #name_str, name_str
                             ) )
                         end
                     end
-                    table.insert( child_parts, new_indent_str .. "}" )
-                    table.insert( parts, table.concat( child_parts, "\n" ) )
+                    
+                    table.insert( child_parts, block_ctx.new_indent .. "}" )
+                    table.insert( block_ctx.parts, table.concat( child_parts, "\n" ) )
                 end
                 --------------------------------------------------------------------------------
                 -- WidgetSafe:GetParent (только имя, ибо уйдет в цикличность)
-                local GetParent = value:GetParent()
-                if GetParent ~= nil then
-                    local parent_display_type = apitype( GetParent ):gsub( "_", "" ):gsub( "Safe$", "" )
-                    local name_str = "\"" .. GetParent:GetName() .. "\""
-                    table.insert( parts, string.format(
-                        "%sGetParent = userdata(%s)%s = { GetName = %s }", 
-                        new_indent_str, parent_display_type, address, name_str
+                local parent = value:GetParent()
+                if parent then
+                    local parent_display_type = apitype( parent ):gsub( "_", "" ):gsub( "Safe$", "" )
+                    local name_str = "\"" .. parent:GetName() .. "\""
+                    local parent_address = ""
+                    if __CONFIG_VAR_DUMP.USERDATA.hexadecimal then
+                        parent_address = "#0x" .. tostring( parent ):match( "0x(%x+)" )
+                    end
+                    
+                    ctxAddRaw( block_ctx, "GetParent", string.format(
+                        "userdata(%s)%s = { GetName = %s }", 
+                        parent_display_type, parent_address, name_str
                     ) )
                 end
                 --------------------------------------------------------------------------------
-                -- WidgetSafe:IsEnabled
                 if __CONFIG_VAR_DUMP.WIDGET.IsEnabled then
-                    local result = value:IsEnabled()
-                    table.insert( parts, new_indent_str .. "IsEnabled = boolean(" .. tostring( result ) .. ")" )
+                    ctxAdd( block_ctx, "IsEnabled", value:IsEnabled() )
                 end
                 --------------------------------------------------------------------------------
-                -- WidgetSafe:IsEnabledEx
                 if __CONFIG_VAR_DUMP.WIDGET.IsEnabledEx then
-                    table.insert( parts, new_indent_str .. "IsEnabledEx = boolean(" .. tostring( value:IsEnabledEx() ) .. ")" )
+                    ctxAdd( block_ctx, "IsEnabledEx", value:IsEnabledEx() )
                 end
                 --------------------------------------------------------------------------------
-                -- WidgetSafe:IsVisible
                 if __CONFIG_VAR_DUMP.WIDGET.IsVisible then
-                    table.insert( parts, new_indent_str .. "IsVisible = boolean(" .. tostring( value:IsVisible() ) .. ")" )
+                    ctxAdd( block_ctx, "IsVisible", value:IsVisible() )
                 end
                 --------------------------------------------------------------------------------
-                -- WidgetSafe:IsVisibleEx
                 if __CONFIG_VAR_DUMP.WIDGET.IsVisibleEx then
-                    table.insert( parts, new_indent_str .. "IsVisibleEx = boolean(" .. tostring( value:IsVisibleEx() ) .. ")" )
+                    ctxAdd( block_ctx, "IsVisibleEx", value:IsVisibleEx() )
                 end
                 --------------------------------------------------------------------------------
-                -- WidgetSafe:GetTransparentInput
-                table.insert( parts, new_indent_str .. "GetTransparentInput = boolean(" .. tostring( value:GetTransparentInput() ) .. ")" )
+                ctxAdd( block_ctx, "GetTransparentInput", value:GetTransparentInput() )
+                ctxAdd( block_ctx, "GetPickChildrenOnly", value:GetPickChildrenOnly() )
                 --------------------------------------------------------------------------------
-                -- WidgetSafe:GetPickChildrenOnly
-                local result = value:GetPickChildrenOnly()
-                table.insert( parts, new_indent_str .. "GetPickChildrenOnly = boolean(" .. tostring( result ) .. ")" )
+                ctxAdd( block_ctx, "GetFade", value:GetFade() )
+                ctxAdd( block_ctx, "GetTabOrder", value:GetTabOrder() )
                 --------------------------------------------------------------------------------
-                -- WidgetSafe:GetFade
-                local result = value:GetFade()
-                table.insert( parts, new_indent_str .. "GetFade = number(" .. result .. ")" )
-                --------------------------------------------------------------------------------
-                -- WidgetSafe:GetTabOrder
-                local result = value:GetTabOrder()
-                table.insert( parts, new_indent_str .. "GetTabOrder = number(" .. result .. ")" )
-                --------------------------------------------------------------------------------
-                -- WidgetSafe:GetPlacementPlain
                 if __CONFIG_VAR_DUMP.WIDGET.GetPlacementPlain then
-                    local result = value:GetPlacementPlain()
-                    local dump = var_dump_internal( result, depth - 1, indent + 1, seen_tables, userdata_ancestors ):sub( #new_indent_str + 1 )
-                    table.insert( parts, new_indent_str .. "GetPlacementPlain = " .. dump )
+                    ctxAdd( block_ctx, "GetPlacementPlain", value:GetPlacementPlain() )
                 end
                 --------------------------------------------------------------------------------
-                -- WidgetSafe:GetSmartPlacementPlain
                 if __CONFIG_VAR_DUMP.WIDGET.GetSmartPlacementPlain then
-                    local result = value:GetSmartPlacementPlain()
-                    local dump = var_dump_internal( result, depth - 1, indent + 1, seen_tables, userdata_ancestors ):sub( #new_indent_str + 1 )
-                    table.insert( parts, new_indent_str .. "GetSmartPlacementPlain = " .. dump )
+                    ctxAdd( block_ctx, "GetSmartPlacementPlain", value:GetSmartPlacementPlain() )
                 end
                 --------------------------------------------------------------------------------
-                -- WidgetSafe:GetRealRect
                 if __CONFIG_VAR_DUMP.WIDGET.GetRealRect then
-                    local result = value:GetRealRect()
-                    local dump = var_dump_internal( result, depth - 1, indent + 1, seen_tables, userdata_ancestors ):sub( #new_indent_str + 1 )
-                    table.insert( parts, new_indent_str .. "GetRealRect = " .. dump )
+                    ctxAdd( block_ctx, "GetRealRect", value:GetRealRect() )
                 end
                 --------------------------------------------------------------------------------
-                table.insert( parts, indent_str .. "}" )
-                return finish( table.concat( parts, "\n" ) )
-            elseif type_str == "ValuedObjectLua" then -- Изменен с ValuedObject
-                local parts = { indent_str .. string.format( "userdata(%s)%s = {", type_str, address ) }
+                table.insert( block_ctx.parts, indent_str .. "}" )
+                return finish( table.concat( block_ctx.parts, "\n" ) )
+                --------------------------------------------------------------------------------
+            elseif type_str == "ValuedObjectLua" then 
+                block_ctx.parts = { header_indent .. string.format( "userdata(%s)%s = {", type_str, address ) }
                 --------------------------------------------------------------------------------
                 -- ValuedObjectLua:GetType
                 local objType = value:GetType()
                 local typeVal = ENUM_VAL_OBJ_TYPE_MAP[ objType ] or "unknown"
                 local objTypeStr = string.format( "number(%s(%d))", typeVal, objType )
-                table.insert( parts, new_indent_str .. "GetType = " .. objTypeStr )
+                ctxAddRaw( block_ctx, "GetType", objTypeStr )
                 --------------------------------------------------------------------------------
-                -- ValuedObjectLua:GetId
-                local objId = value:GetId()
-                local dump = var_dump_internal( objId, depth - 1, indent + 1, seen_tables, userdata_ancestors ):sub( #new_indent_str + 1 )
-                table.insert( parts, new_indent_str .. "GetId = " .. dump )
-                --------------------------------------------------------------------------------
-                -- ValuedObjectLua:GetImage
-                local objImage = value:GetImage()
-                --[[ if objImage ~= nil and objImage ~= value then ]]
-                local dump = var_dump_internal( objImage, depth - 1, indent + 1, seen_tables, userdata_ancestors ):sub( #new_indent_str + 1 )
-                table.insert( parts, new_indent_str .. "GetImage = " .. dump )
+                ctxAdd( block_ctx, "GetId", value:GetId() )
+                ctxAdd( block_ctx, "GetImage", value:GetImage() )
+                ctxAdd( block_ctx, "GetText", value:GetText() )
                 --------------------------------------------------------------------------------
                 -- ValuedObjectLua:GetShardName
                 -- Метод доступен только у ValuedObjectPlayer.
                 -- Иначе выбрасывает исключение: <UI::LuaValuedObjectGetShardName: ValuedObject is not ValuedObjectPlayer>
                 if objType == VAL_OBJ_TYPE_PLAYER then
-                    local GetShardName = value:GetShardName()
-                    local dump = var_dump_internal( GetShardName, depth - 1, indent + 1, seen_tables, userdata_ancestors ):sub( #new_indent_str + 1 )
-                    table.insert( parts, new_indent_str .. "GetShardName = " .. dump )
+                    ctxAdd( block_ctx, "GetShardName", value:GetShardName() )
                 end
                 --------------------------------------------------------------------------------
-                -- ValuedObjectLua:GetText
-                local objText = value:GetText()
-                local dump = var_dump_internal( objText, depth - 1, indent + 1, seen_tables, userdata_ancestors ):sub( #new_indent_str + 1 )
-                table.insert( parts, new_indent_str .. "GetText = " .. dump )
+                table.insert( block_ctx.parts, indent_str .. "}" )
+                return finish( table.concat( block_ctx.parts, "\n" ) )
                 --------------------------------------------------------------------------------
-                table.insert( parts, indent_str .. "}" )
-                return finish( table.concat( parts, "\n" ) )
             elseif type_str == "ValuedText" then
-                local parts = { indent_str .. string.format( "userdata(%s)%s = {", type_str, address ) }
+                block_ctx.parts = { header_indent .. string.format( "userdata(%s)%s = {", type_str, address ) }
                 --------------------------------------------------------------------------------
-                local str = userMods.FromWString( value:ToWString() )
-                table.insert( parts, string.format( '%sToWString = WString(%d) "%s"', new_indent_str, #str, escaped( str ) ) )
+                ctxAdd( block_ctx, "ToWString", value:ToWString() )
                 --------------------------------------------------------------------------------
-                table.insert( parts, indent_str .. "}" )
-                return finish( table.concat( parts, "\n" ) )
+                table.insert( block_ctx.parts, indent_str .. "}" )
+                return finish( table.concat( block_ctx.parts, "\n" ) )
             elseif 
-                type_str == "RelatedSoundsLua" or 
-                type_str == "RelatedTextsLua" or 
-                type_str == "RelatedTexturesLua" or 
-                type_str == "RelatedWidgetsLua" 
+                type_str == "RelatedSoundsLua" or type_str == "RelatedTextsLua" or 
+                type_str == "RelatedTexturesLua" or type_str == "RelatedWidgetsLua" 
             then
-                local parts = { indent_str .. string.format( "userdata(%s)%s = {", type_str, address ) }
+                block_ctx.parts = { header_indent .. string.format( "userdata(%s)%s = {", type_str, address ) }
                 --------------------------------------------------------------------------------
-                -- RelatedSafe:GetList
-                local list = value:GetList()
-                local dump = var_dump_internal( list, depth - 1, indent + 1, seen_tables, userdata_ancestors ):sub( #new_indent_str + 1 )
-                table.insert( parts, new_indent_str .. "GetList = " .. dump )
+                ctxAdd( block_ctx, "GetList", value:GetList() )
                 --------------------------------------------------------------------------------
-                table.insert( parts, indent_str .. "}" )
-                return finish( table.concat( parts, "\n" ) )
+                table.insert( block_ctx.parts, indent_str .. "}" )
+                return finish( table.concat( block_ctx.parts, "\n" ) )
             end
             
             return string.format( "%s(%s)%s", prefix, tostring( value ) )
+            
         elseif native_type == "thread" then
             return prefix .. "(coroutine)"
         end
@@ -720,78 +763,51 @@ local function var_dump_internal( value, depth, indent, seen_tables, userdata_an
         return prefix
     end
     
-    
-    
-    
     --------------------------------------------------------------------------------
     -- TABLE
     --------------------------------------------------------------------------------
     -- Когда доходит до предела глубина дерева (ограничение)
-    if depth <= 0 then
-        return indent_str .. "table(...)"
+    if ctx.depth <= 0 then
+        return header_indent .. "table(...)"
     end
     
     --------------------------------------------------------------------------------
-    -- Определение заголовка таблицы table(Color, GamePosition, ...)
+    -- Определение заголовка table(Color, ...)
     local table_header
-    local is_widget_placement = false
-    local is_full_date_time = false
-    local is_lua_sex_info_part = false
-    local is_mutation_info = false
-    local is_texture_info = false
+    local matched_type = nil
     local count_values = countEntries( value )
     
-    if isColorTable( value ) then
-        table_header = string.format( "table(Color:%d) {", count_values )
-    elseif isGamePositionTable( value ) then
-        table_header = string.format( "table(GamePosition:%d) {", count_values )
-    elseif isWidgetPlacementTable( value ) then
-        table_header = string.format( "table(WidgetPlacementLua:%d) {", count_values )
-        is_widget_placement = true
-    elseif isGeodataTable( value ) then
-        table_header = string.format( "table(Geodata:%d) {", count_values )
-    elseif isInnateStatSecondaryTable( value ) then
-        table_header = string.format( "table(InnateStatSecondary:%d) {", count_values )
-    elseif isLuaFullDateTimeTable( value ) then
-        table_header = string.format( "table(LuaFullDateTime:%d) {", count_values )
-        is_full_date_time = true
-    elseif isLuaRaceClassInfoPartTable( value ) then
-        table_header = string.format( "table(LuaRaceClassInfoPart:%d) {", count_values )
-    elseif isLuaSexInfoPartTable( value ) then
-        table_header = string.format( "table(LuaSexInfoPart:%d) {", count_values )
-        is_lua_sex_info_part = true
-    elseif isMutationInfoTable( value ) then
-        table_header = string.format( "table(MutationInfo:%d) {", count_values )
-        is_mutation_info = true
-    elseif isTextureInfoTable( value ) then
-        table_header = string.format( "table(%d) {", count_values )
-        is_texture_info = true
-    elseif ENABLE_TWIDGET and IsTWidget( value ) then -- Вывод особой таблицы TWidget
-        local raw_widget = value:GetRaw()
-        local dump = var_dump_internal( raw_widget, depth - 1, indent, seen_tables, userdata_ancestors ):gsub( "userdata%(", "TWidget(", 1 )
+    if __CONFIG_VAR_DUMP.TABLE.tableIdentification then
+        for _, desc in ipairs( TABLE_TYPES ) do
+            if desc.validator( value ) then
+                matched_type = desc
+                break
+            end
+        end
+    end
+    
+    if matched_type then
+        table_header = string.format( "table(%s:%d) {", matched_type.name, count_values )
+    elseif ENABLE_TWIDGET and IsTWidget( value ) then
+    local raw_widget = value:GetRaw()
+        local dump = var_dump_internal( raw_widget, ctx, inline ):gsub( "userdata%(", "TWidget(", 1 )
         return dump
     else
         table_header = string.format( "table(%d) {", count_values )
     end
-    --------------------------------------------------------------------------------
-
-    local parts = { indent_str .. table_header }
-    local new_depth = depth - 1
-    local new_indent = indent + 1
-    local new_indent_str = string.rep( indent_mode, new_indent )
     
-    -- Сбор ключей
+    --------------------------------------------------------------------------------
+    
+    local parts = { header_indent .. table_header }
     local keys = {}
+    
     local k = nil
     while true do
         k = next( value, k )
-        if k == nil then
-            break
-        end
+        if k == nil then break end
         table.insert( keys, k )
     end
     
-    -- Сортировка ключей: числа, строки, остальные
     table.sort( keys, function( a, b )
         local ta, tb = type( a ), type( b )
         if ta == "number" and tb == "number" then return a < b end
@@ -810,46 +826,26 @@ local function var_dump_internal( value, depth, indent, seen_tables, userdata_an
         else
             key_str = string.format( "[%s]", tostring( k ) )
         end
-
-        local dump
+        
+        local dump = nil
         --------------------------------------------------------------------------------
-        if is_widget_placement and type( v ) == "number" and type( k ) == "string" then
-            -- Если таблица WidgetPlacementLua
-            if k == "alignX" or k == "alignY" then
-                local constName = WIDGET_ALIGN_MAP[v] or "unknown"
-                dump = string.format( "number(%s(%d))", constName, v )
-            elseif k == "sizingX" or k == "sizingY" then
-                local constName = WIDGET_SIZING_MAP[v] or "unknown"
-                dump = string.format( "number(%s(%d))", constName, v )
-            end
-        elseif is_full_date_time and type( v ) == "number" and type( k ) == "string" then
-            -- Если таблица LuaFullDateTime
-            if k == "wday" then
-                local constName = ENUM_DAY_OF_WEEK_MAP[v] or "unknown"
-                dump = string.format( "number(%s(%d))", constName, v )
-            elseif k == "month" then
-                local constName = ENUM_MONTH_MAP[v] or "unknown"
+        if matched_type and type( v ) == "number" and type( k ) == "string" then
+            -- Сначало кастомный форматтер
+            if matched_type.customFormatter then
+                dump = matched_type.customFormatter( k, v )
+            elseif matched_type.fieldMappers and matched_type.fieldMappers[k] then
+                local map = matched_type.fieldMappers[k]
+                local constName = map[v] or "unknown"
                 dump = string.format( "number(%s(%d))", constName, v )
             end
-        elseif is_lua_sex_info_part and type( v ) == "number" and k == "sex" then
-            -- Если таблица LuaSexInfoPart
-            local constName = ENUM_SEX_MAP[v] or "unknown"
-            dump = string.format( "number(%s(%d))", constName, v )
-        elseif is_mutation_info and type( v ) == "number" and k == "difficulty" then
-            -- Если таблица MutationInfo
-            local constName = ENUM_ZONE_TIER_DIFFICULTY_MAP[v] or "unknown"
-            dump = string.format( "number(%s(%d))", constName, v )
-        elseif is_texture_info and type( v ) == "number" and k == "type" then
-            -- Если таблица TextureInfo
-            local constName = TEXTURE_TYPE_MAP[v] or "UNKNOWN"
-            dump = string.format( "number(%s:%d)", constName, v )
         end
         --------------------------------------------------------------------------------
+        
         if not dump then
-            dump = var_dump_internal( v, new_depth, new_indent, seen_tables, userdata_ancestors ):sub( #new_indent_str + 1 )
+            dump = var_dump_internal( v, block_ctx, true )
         end
-
-        table.insert( parts, string.format( "%s => %s", new_indent_str .. key_str, dump ) )
+        
+        table.insert( parts, string.format( "%s => %s", block_ctx.new_indent .. key_str, dump ) )
     end
     
     table.insert( parts, indent_str .. "}" )
@@ -860,11 +856,12 @@ end
 function var_dump( ... )
     local results = {}
     local n = select( '#', ... )
-    local seen_tables = {}
-    local userdata_ancestors = {}
+    
+    local ctx, result
     
     for i = 1, n do
-        local result = var_dump_internal( select( i, ... ), 10, 0, seen_tables, userdata_ancestors )
+        ctx = { depth = __CONFIG_VAR_DUMP.DEBUG.depth, indent = 0, seen = {}, ancestors = {} }
+        result = var_dump_internal( select( i, ... ), ctx )
         table.insert( results, result )
     end
     
