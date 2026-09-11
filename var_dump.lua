@@ -4,7 +4,7 @@
 -- Включение и настройка опций для участия дамба
 local DEFAULT_CONFIG_VAR_DUMP = {
     DEBUG = {
-        version = "v1.5",
+        version = "v1.5.1",
         depth = 10, -- Максимальная глубина рекурсии. table(...) { 1 => table(...) { 1 => И т.д.. } }
     },
     WIDGET = {
