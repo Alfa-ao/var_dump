@@ -480,7 +480,8 @@ local function var_dump_internal( value, ctx, inline )
             local address = ""
             
             if __CONFIG_VAR_DUMP.USERDATA.hexadecimal or is_light_userdata then
-                address = "#0x" .. tostring( value ):match( "0x(%x+)" )
+                local hex = tostring( value ):match( "0x(%x+)" )
+                address = hex and ( "#0x" .. hex ) or ""
             end
             --------------------------------------------------------------------------------
             -- light userdata
@@ -645,7 +646,8 @@ local function var_dump_internal( value, ctx, inline )
                             local child_address = ""
                             
                             if __CONFIG_VAR_DUMP.USERDATA.hexadecimal then
-                                child_address = "#0x" .. tostring( child ):match( "0x(%x+)" )
+                                local hex = tostring( child ):match( "0x(%x+)" )
+                                child_address = hex and ( "#0x" .. hex ) or ""
                             end
                             
                             table.insert( child_parts, string.format( 
@@ -666,7 +668,8 @@ local function var_dump_internal( value, ctx, inline )
                     local name_str = "\"" .. parent:GetName() .. "\""
                     local parent_address = ""
                     if __CONFIG_VAR_DUMP.USERDATA.hexadecimal then
-                        parent_address = "#0x" .. tostring( parent ):match( "0x(%x+)" )
+                        local hex = tostring( parent ):match( "0x(%x+)" )
+                        parent_address = hex and ( "#0x" .. hex ) or ""
                     end
                     
                     ctxAddRaw( block_ctx, "GetParent", string.format(
@@ -739,6 +742,7 @@ local function var_dump_internal( value, ctx, inline )
                 block_ctx.parts = { header_indent .. string.format( "userdata(%s)%s = {", type_str, address ) }
                 --------------------------------------------------------------------------------
                 ctxAdd( block_ctx, "ToWString", value:ToWString() )
+                ctxAdd( block_ctx, "userMods.FromValuedText", userMods.FromValuedText( value, true ) )
                 --------------------------------------------------------------------------------
                 table.insert( block_ctx.parts, indent_str .. "}" )
                 return finish( table.concat( block_ctx.parts, "\n" ) )
@@ -754,7 +758,18 @@ local function var_dump_internal( value, ctx, inline )
                 return finish( table.concat( block_ctx.parts, "\n" ) )
             end
             
-            return string.format( "%s(%s)%s", prefix, tostring( value ) )
+            -- UniqueId
+            --------------------------------------------------------------------------------
+            -- Оставлю на память. 
+            -- Некорректно формируется стек-трейс в Lua c аномальным "bad argument #4".
+            -- указывает на вызывающую функцию var_dump_internal вместо string.format
+            -- bad argument #4 to 'var_dump_internal' (value expected)
+            -- func: ?, ?, line: -1, defined: C, line: -1, [C]
+            -- func: var_dump_internal, upvalue, line: -1, defined: C, line: -1, [C]
+            -- Fix: 
+            -- return string.format( "%s(%s)%s", prefix, tostring( value ) )
+            --------------------------------------------------------------------------------
+            return header_indent .. string.format( "userdata(%s)%s", type_str, address )
             
         elseif native_type == "thread" then
             return prefix .. "(coroutine)"
@@ -855,13 +870,17 @@ end
 -- Public функция
 function var_dump( ... )
     local results = {}
-    local n = select( '#', ... )
+    local result
+    local args = { ... }
     
-    local ctx, result
-    
-    for i = 1, n do
-        ctx = { depth = __CONFIG_VAR_DUMP.DEBUG.depth, indent = 0, seen = {}, ancestors = {} }
-        result = var_dump_internal( select( i, ... ), ctx )
+    for i = 1, #args do
+        result = var_dump_internal( args[i], { 
+            depth = __CONFIG_VAR_DUMP.DEBUG.depth, 
+            indent = 0, 
+            seen = {}, 
+            ancestors = {} 
+        } )
+        
         table.insert( results, result )
     end
     
