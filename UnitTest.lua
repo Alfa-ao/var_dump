@@ -17,9 +17,19 @@
 --------------------------------------------------------------------------------
 --- @type RecipeId
 --- @type ComponentPropertyId
---- @type ValuedText
 --------------------------------------------------------------------------------
 --var_dump( avatar.GetAlchemyInfo() )
+
+--------------------------------------------------------------------------------
+--- @type ValuedText
+--- @type RelatedTextsLua
+--------------------------------------------------------------------------------
+--[[ local group = common.GetAddonRelatedTextGroup( "template", true )
+local vt = common.CreateValuedText {
+    format = group:GetText( "RECIPE_LINE" ),
+    level = 5,
+}
+var_dump( vt, group ) ]]
 
 --------------------------------------------------------------------------------
 --- @type AbilityId
@@ -190,3 +200,61 @@ common.LogInfo("common", "type=" .. type(cache) .. " apitype=" .. apitype(cache)
 --- @type test
 --------------------------------------------------------------------------------
 --var_dump( test )
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------
+------------------------------- Lua API Release --------------------------------
+--------------------------------------------------------------------------------
+
+-- Удалены следующие функции:
+-- https://alfa-ao.github.io/allods-lua-api-docs/#18.0.0-spellLib._DurationBuff
+--var_dump( "#18.0.0-spellLib._DurationBuff", spellLib.HasDurationBuff, spellLib.GetDurationBuff )
+
+--------------------------------------------------------------------------------
+
+-- Индексация возвращаемой таблицы становится валидным 0 => 1
+-- https://alfa-ao.github.io/allods-lua-api-docs/#17.0.0-options.Get...Ids
+--var_dump( "#17.0.0-options.Get...Ids", options.GetPageIds() )
+
+--------------------------------------------------------------------------------
+
+-- Вместо функции: options.SetOptionCurrentIndex.
+-- Разделены по типу на булевые / все остальные. Можно передать 3 аргумент true для мгновенного применения.
+-- https://alfa-ao.github.io/allods-lua-api-docs/#17.0.0-options.SetOptionCurrentIndex
+--var_dump( "#17.0.0-options.SetOptionCurrentIndex", options.SetOptionCurrentIndex, options.SetOptionEnabled, options.SetOptionIndex )
+
+--------------------------------------------------------------------------------
+
+-- Новые API
+-- https://alfa-ao.github.io/allods-lua-api-docs/#17.0.0-options.IsOptionEnabled
+--var_dump( "#17.0.0-options.IsOptionEnabled", options.IsOptionEnabled )
+
+--------------------------------------------------------------------------------
+
+-- Тип UniqueId меняется с userdata на number (int64) во всех связанных API. Соответственно все методы UniqueId исчезают.
+-- https://alfa-ao.github.io/allods-lua-api-docs/#17.0.0-UniqueId
+--var_dump( "#17.0.0-UniqueId", avatar.GetUniqueId() )
+
+--------------------------------------------------------------------------------
+
+-- Аддоны использующие кастомные стили должны будут явно их загрузить. 
+-- Появится специальная API: common.LoadCustomCss( id ) - загружает набор стилей аддона с заданным id.
+-- https://alfa-ao.github.io/allods-lua-api-docs/#17.0.0-WidgetCss
+--var_dump( "#17.0.0-WidgetCss", common.LoadCustomCss )
+
+--------------------------------------------------------------------------------
+
+-- Функция DEPRECATED. Аналог common.SendUserModsEvent
+-- https://alfa-ao.github.io/allods-lua-api-docs/#16.0.0-userMods.SendEvent
+--var_dump( "#16.0.0-userMods.SendEvent", userMods.SendEvent )
+
+--------------------------------------------------------------------------------
