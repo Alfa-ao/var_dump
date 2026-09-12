@@ -469,13 +469,13 @@ local function var_dump_internal( value, ctx, inline )
     if native_type ~= "table" then
         local prefix = header_indent .. type_str
         if native_type == "string" then
-            return string.format( '%s(%d) "%s"', prefix, #value, escaped( value ) )
+            return header_indent .. string.format( '%s(%d) "%s"', type_str, #value, escaped( value ) )
         elseif native_type == "number" then
-            return string.format( "%s(%s)", prefix, tostring( value ) )
+            return header_indent .. string.format( "%s(%s)", type_str, tostring( value ) )
         elseif native_type == "boolean" then
-            return string.format( "%s(%s)", prefix, value and "true" or "false" )
+            return header_indent .. string.format( "%s(%s)", type_str, value and "true" or "false" )
         elseif native_type == "function" then
-            return string.format( "%s(%s)", prefix, tostring( value ) )
+            return header_indent .. string.format( "%s(%s)", type_str, tostring( value ) )
         elseif native_type == "userdata" then
             local address = ""
             
@@ -491,7 +491,7 @@ local function var_dump_internal( value, ctx, inline )
             --------------------------------------------------------------------------------
             if type_str == "WString" then
                 local str = userMods.FromWString( value )
-                return string.format( '%s(%d) "%s"', prefix, #str, escaped( str ) )
+                return header_indent .. string.format( '%s(%d) "%s"', type_str, #str, escaped( str ) )
             elseif type_str == "FactoryCacheSafe" then
                 block_ctx.parts = { header_indent .. string.format( "userdata(%s)%s = {", type_str, address ) }
                 --------------------------------------------------------------------------------
@@ -760,7 +760,7 @@ local function var_dump_internal( value, ctx, inline )
             
             -- UniqueId
             --------------------------------------------------------------------------------
-            -- Оставлю на память. 
+            -- Оставлю на память. "Tail Call Optimization Lua"
             -- Некорректно формируется стек-трейс в Lua c аномальным "bad argument #4".
             -- указывает на вызывающую функцию var_dump_internal вместо string.format
             -- bad argument #4 to 'var_dump_internal' (value expected)
@@ -768,6 +768,7 @@ local function var_dump_internal( value, ctx, inline )
             -- func: var_dump_internal, upvalue, line: -1, defined: C, line: -1, [C]
             -- Fix: 
             -- return string.format( "%s(%s)%s", prefix, tostring( value ) )
+            -- to:
             --------------------------------------------------------------------------------
             return header_indent .. string.format( "userdata(%s)%s", type_str, address )
             
