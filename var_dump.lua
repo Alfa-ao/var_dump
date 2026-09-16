@@ -177,14 +177,7 @@ local TEXTURE_TYPE_MAP = {
 
 --------------------------------------------------------------------------------
 
--- Подсчет элементов в таблице не/индексируемой.
-local function countEntries( tbl )
-    local count = 0
-    for _ in pairs( tbl ) do
-        count = count + 1
-    end
-    return count
-end
+local countEntries = table.nkeys
 
 --- Для создания функций валидации структуры таблицы.
 --- @param schema table Хеш-таблица { [ имя поля ] = { допустимые типы } }.
