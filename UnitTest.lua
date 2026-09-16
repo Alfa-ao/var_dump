@@ -192,20 +192,158 @@ var_dump( itemRuneInfo ) ]]
 --[[ local cache = mainForm:GetFactoryCache()
 common.LogInfo("common", "type=" .. type(cache) .. " apitype=" .. apitype(cache) ) ]]
 --------------------------------------------------------------------------------
+--- @type thread
+--------------------------------------------------------------------------------
+--var_dump( coroutine.create( function() end ) )
+
+--------------------------------------------------------------------------------
 --- @type test
 --------------------------------------------------------------------------------
 --var_dump( test )
 
---------------------------------------------------------------------------------
---- @type test
---------------------------------------------------------------------------------
---var_dump( test )
 
 
-
-
-
-
+--[[ 
+table(184) {
+    ["apitype"] => function(function: builtin#31)
+    ["assert"] => function(function: builtin#2)
+    ["bit"] => table(12) {
+        ["arshift"] => function(function: builtin#72)
+        ["band"] => function(function: builtin#75)
+        ["bnot"] => function(function: builtin#68)
+        ["bor"] => function(function: builtin#76)
+        ["bswap"] => function(function: builtin#69)
+        ["bxor"] => function(function: builtin#77)
+        ["lshift"] => function(function: builtin#70)
+        ["rol"] => function(function: builtin#73)
+        ["ror"] => function(function: builtin#74)
+        ["rshift"] => function(function: builtin#71)
+        ["tobit"] => function(function: builtin#67)
+        ["tohex"] => function(function: builtin#78)
+    }
+    ["collectgarbage"] => function(function: builtin#28) -- интерфейс для управления сборщиком мусора
+    ["coroutine"] => table(7) { -- public
+        ["create"] => function(function: builtin#36)
+        ["isyieldable"] => function(function: builtin#35)
+        ["resume"] => function(function: builtin#38)
+        ["running"] => function(function: builtin#34)
+        ["status"] => function(function: builtin#33)
+        ["wrap"] => function(function: builtin#40)
+        ["yield"] => function(function: builtin#37)
+    }
+    ["dofile"] => function(function: builtin#26)
+    ["error"] => function(function: builtin#20)
+    ["gcinfo"] => function(function: builtin#27)
+    ["getfenv"] => function(function: builtin#10)
+    ["getmetatable"] => function(function: builtin#8)
+    ["ipairs"] => function(function: builtin#7)
+    ["isindexableudata"] => function(function: builtin#32)
+    ["jit"] => table(10) {
+        ["arch"] => string(3) "x64"
+        ["attach"] => function(function: builtin#108)
+        ["flush"] => function(function: builtin#105)
+        ["off"] => function(function: builtin#104)
+        ["on"] => function(function: builtin#103)
+        ["os"] => string(7) "Windows"
+        ["security"] => function(function: builtin#107)
+        ["status"] => function(function: builtin#106)
+        ["version"] => string(28) "LuaJIT 2.1.1741730670_Allods"
+        ["version_num"] => number(20199)
+    }
+    ["load"] => function(function: builtin#24)
+    ["loadfile"] => function(function: builtin#23)
+    ["loadstring"] => function(function: builtin#25)
+    ["math"] => table(34) {
+        ["abs"] => function(function: builtin#41)
+        ["acos"] => function(function: builtin#51)
+        ["asin"] => function(function: builtin#50)
+        ["atan"] => function(function: builtin#52)
+        ["atan2"] => function(function: builtin#59)
+        ["ceil"] => function(function: builtin#43)
+        ["clamp"] => function(function: 0x4a9f6d48)
+        ["cos"] => function(function: builtin#48)
+        ["cosh"] => function(function: builtin#54)
+        ["deg"] => function(function: 0x4a9f5bc0)
+        ["exp"] => function(function: builtin#46)
+        ["floor"] => function(function: builtin#42)
+        ["fmod"] => function(function: builtin#61)
+        ["frexp"] => function(function: builtin#56)
+        ["huge"] => number(inf)
+        ["ldexp"] => function(function: builtin#62)
+        ["log"] => function(function: builtin#58)
+        ["log10"] => function(function: builtin#45)
+        ["max"] => function(function: builtin#64)
+        ["min"] => function(function: builtin#63)
+        ["modf"] => function(function: builtin#57)
+        ["pi"] => number(3.1415926535898)
+        ["pow"] => function(function: builtin#60)
+        ["rad"] => function(function: 0x4a9f5ca0)
+        ["random"] => function(function: builtin#65)
+        ["randomseed"] => function(function: builtin#66)
+        ["round"] => function(function: 0x4a9f6ce8)
+        ["sign"] => function(function: 0x4a9f5148)
+        ["sin"] => function(function: builtin#47)
+        ["sinh"] => function(function: builtin#53)
+        ["sqrt"] => function(function: builtin#44)
+        ["tan"] => function(function: builtin#49)
+        ["tanh"] => function(function: builtin#55)
+        ["wrap"] => function(function: 0x4a9f6da8)
+    }
+    ["newproxy"] => function(function: builtin#29)
+    ["next"] => function(function: builtin#4)
+    ["pairs"] => function(function: builtin#5)
+    ["pcall"] => function(function: builtin#21)
+    ["print"] => function(function: builtin#30)
+    ["rawequal"] => function(function: builtin#14)
+    ["rawget"] => function(function: builtin#12)
+    ["rawlen"] => function(function: builtin#15)
+    ["rawset"] => function(function: builtin#13)
+    ["select"] => function(function: builtin#17)
+    ["setfenv"] => function(function: builtin#11)
+    ["setmetatable"] => function(function: builtin#9)
+    ["string"] => table(14) {
+        ["byte"] => function(function: builtin#79)
+        ["char"] => function(function: builtin#80)
+        ["dump"] => function(function: builtin#86)
+        ["find"] => function(function: builtin#87)
+        ["format"] => function(function: builtin#92)
+        ["gmatch"] => function(function: builtin#90)
+        ["gsub"] => function(function: builtin#91)
+        ["len"] => function(function: 0x4a9f4ab8)
+        ["lower"] => function(function: builtin#84)
+        ["match"] => function(function: builtin#88)
+        ["rep"] => function(function: builtin#82)
+        ["reverse"] => function(function: builtin#83)
+        ["sub"] => function(function: builtin#81)
+        ["upper"] => function(function: builtin#85)
+    }
+    ["table"] => table(18) {
+        ["clear"] => function(function: builtin#102)
+        ["clone"] => function(function: 0x4a9f51a8)
+        ["concat"] => function(function: builtin#95)
+        ["foreach"] => function(function: 0x4a9f4060)
+        ["foreachi"] => function(function: 0x4a9f3f48)
+        ["getn"] => function(function: 0x4a9f4138)
+        ["getsize"] => function(function: 0x4a9f5208)
+        ["insert"] => function(function: builtin#94)
+        ["isempty"] => function(function: builtin#98)
+        ["maxn"] => function(function: builtin#93)
+        ["move"] => function(function: 0x4a9f44a8)
+        ["new"] => function(function: builtin#101)
+        ["nkeys"] => function(function: builtin#97)
+        ["pack"] => function(function: builtin#100)
+        ["remove"] => function(function: 0x4a9f4350)
+        ["sclone"] => function(function: builtin#96)
+        ["sort"] => function(function: builtin#99)
+        ["unpack"] => function(function: builtin#16)
+    }
+    ["tonumber"] => function(function: builtin#18)
+    ["tostring"] => function(function: builtin#19)
+    ["type"] => function(function: builtin#3)
+    ["unpack"] => function(function: builtin#16)
+    ["xpcall"] => function(function: builtin#22)
+}
+ ]]
 
 
 
