@@ -1,11 +1,11 @@
 -- test Global( "__CONFIG_VAR_DUMP", {} )
 
--- ( DEFAULT не трогать. Юзать __CONFIG_VAR_DUMP = {...} )
+-- ( DEFAULT не трогать. Юзать __CONFIG_VAR_DUMP = {...} в своём коде )
 -- Включение и настройка опций для участия дамба
 local DEFAULT_CONFIG_VAR_DUMP = {
     DEBUG = {
-        version = "v1.5.1",
         depth = 10, -- Максимальная глубина рекурсии. table(...) { 1 => table(...) { 1 => И т.д.. } }
+        disableBacktrace = false, -- Отключает вывод структуры вызовов (стэк-трейс)
     },
     WIDGET = {
         GetPlacementPlain = true,
@@ -52,17 +52,7 @@ local function deepMerge( base, source )
     return result
 end
 
-local user_config = rawget( _G, "__CONFIG_VAR_DUMP" )
-if type( user_config ) == "table" then
-    if not user_config.DEBUG or user_config.DEBUG.version ~= DEFAULT_CONFIG_VAR_DUMP.DEBUG.version then
-        common.LogInfo( "common", 
-            "[var_dump] Warning: Your __CONFIG_VAR_DUMP is outdated. " ..
-            "Please update to version " .. DEFAULT_CONFIG_VAR_DUMP.DEBUG.version
-        )
-    end
-end
-
-local __CONFIG_VAR_DUMP = deepMerge( DEFAULT_CONFIG_VAR_DUMP, user_config or {} )
+local __CONFIG_VAR_DUMP = deepMerge( DEFAULT_CONFIG_VAR_DUMP, rawget( _G, "__CONFIG_VAR_DUMP" ) or {} )
 
 -- Если появился тип TWidget
 local ENABLE_TWIDGET = type( rawget( _G, "IsTWidget" ) ) == "function"
@@ -177,13 +167,11 @@ local TEXTURE_TYPE_MAP = {
 
 --------------------------------------------------------------------------------
 
-local countEntries = table.nkeys
-
 --- Для создания функций валидации структуры таблицы.
 --- @param schema table Хеш-таблица { [ имя поля ] = { допустимые типы } }.
 --- @return function
 local function createTableValidator( schema )
-    local expected_count = countEntries( schema )
+    local expected_count = table.nkeys( schema )
 
     return function( tbl )
         if type( tbl ) ~= "table" then
@@ -563,7 +551,7 @@ local function var_dump_internal( value, ctx, inline )
                 else
                     -- ResourceId:GetInfo
                     local info = value:GetInfo()
-                    if type( info ) == "table" and next( info ) ~= nil then
+                    if not table.isempty( info ) then
                         ctxAdd( block_ctx, "GetInfo", info )
                     end
                 end
@@ -625,7 +613,7 @@ local function var_dump_internal( value, ctx, inline )
                 --------------------------------------------------------------------------------
                 -- WidgetSafe:GetNamedChildren (только имена, ибо уйдет в цикличность)
                 local GetNamedChildren = value:GetNamedChildren()
-                if next( GetNamedChildren ) ~= nil then
+                if not table.isempty( GetNamedChildren ) then
                     local child_indent_str = block_ctx.new_indent .. indent_mode
                     local child_parts = { block_ctx.new_indent .. "GetNamedChildren = table(" .. #GetNamedChildren .. ") {" }
                     for i, child in ipairs( GetNamedChildren ) do
@@ -784,7 +772,7 @@ local function var_dump_internal( value, ctx, inline )
     -- Определение заголовка table(Color, ...)
     local table_header
     local matched_type = nil
-    local count_values = countEntries( value )
+    local count_values = table.nkeys( value )
     
     if __CONFIG_VAR_DUMP.TABLE.tableIdentification then
         for _, desc in ipairs( TABLE_TYPES ) do
@@ -861,6 +849,44 @@ local function var_dump_internal( value, ctx, inline )
     return finish( table.concat( parts, "\n" ) )
 end
 
+--- @return string
+local function debug_backtrace()
+    local formattedStack = {}
+    local callStack = userMods.GetCallStack()
+    local startIndex = 4
+    
+    for index = startIndex, #callStack do
+        local stackString = callStack[ index ]
+        
+        local funcName, lineNum, filePath = string.match(
+            stackString, 
+            "func:%s*([^,]+),.-line:%s*(-?%d+),.-,%s*(.+)"
+        )
+        
+        local displayIndex = index - startIndex
+        
+        if funcName and lineNum and filePath then
+            if funcName == "?" then
+                funcName = "{main}"
+            end
+            
+            -- #0 /path/to/file.lua(129): FuncName()
+            local formattedLine = string.format(
+                "#%d %s(%s): %s()", 
+                displayIndex, 
+                filePath, 
+                lineNum, 
+                funcName
+            )
+            table.insert( formattedStack, formattedLine )
+        else
+            table.insert( formattedStack, string.format( "#%d %s", displayIndex, stackString ) )
+        end
+    end
+    
+    return table.concat( formattedStack, "\n" )
+end
+
 -- Public функция
 function var_dump( ... )
     local results = {}
@@ -878,9 +904,10 @@ function var_dump( ... )
         table.insert( results, result )
     end
     
-    local info = "<<< Debug info var_dump >>>\n" .. 
-        "======================BEGIN======================\n" .. 
-        table.concat( results, "\n----------------------\n" ) .. "\n" .. 
+    local info = "<<< Debug info var_dump >>>\n" ..
+        ( __CONFIG_VAR_DUMP.DEBUG.disableBacktrace and "" or ( debug_backtrace() .. "\n" ) ) ..
+        "======================BEGIN======================\n" ..
+        table.concat( results, "\n----------------------\n" ) .. "\n" ..
         "=======================END=======================\n"
     
     common.LogInfo( "common", info ) -- Ограничение 64000 символов.

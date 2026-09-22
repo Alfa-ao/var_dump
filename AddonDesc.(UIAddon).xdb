@@ -9,10 +9,6 @@
 		<useCommonScripts>false</useCommonScripts>
 	</userAddonInfo>
 	<ScriptFileRefs>
-		<!-- GetTableSize -->
-		<Item href="/Mods/SampleCommon/SampleAddonBase.lua" />
-		
-		<!-- OOP -->
 		<Item href="/Mods/SampleCommon/CoreScripts/ClassesImplementation.lua" />
 		
 		<!-- Debug -->
