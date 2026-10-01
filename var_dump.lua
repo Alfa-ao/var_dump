@@ -1,3 +1,67 @@
+--[=[
+
+Баги. Обнаруженные и пофикшены в течении времени.
+
+#1
+{{
+--------------------------------------------------------------------------------
+-- Оставлю на память. "Tail Call Optimization Lua"
+-- Некорректно формируется стек-трейс в Lua c аномальным "bad argument #4".
+-- указывает на вызывающую функцию var_dump_internal вместо string.format
+-- bad argument #4 to 'var_dump_internal' (value expected)
+-- func: ?, ?, line: -1, defined: C, line: -1, [C]
+-- func: var_dump_internal, upvalue, line: -1, defined: C, line: -1, [C]
+-- Fix: 
+-- return string.format( "%s(%s)%s", prefix, tostring( value ) )
+-- to:
+return header_indent .. string.format( "userdata(%s)%s", type_str, address )
+--------------------------------------------------------------------------------
+
+UIAddon:
+Когда функция возвращает единственное значение и это вызов другой функции, 
+то реального вызова на происходит, рантаймом выполняется склейка. Это экономит такты, 
+но приводит к странноватым стектрейсам. Это нормально. 
+Отключить на пользовательском уровне нельзя (определяется флагами компиляции LuaJIT). 
+}}
+
+
+
+#2
+{{
+TWidget (UIAddon - useCommonScripts = true).
+Недочёты в скрипте WidgetCoreUserMods.lua.
+--------------------------------------------------------------------------------
+-- Проверить что аргумент это TWidget
+function IsTWidget( widget )
+	local id = widget and type( widget ) == "table" and widget.GetInstanceId and widget:GetInstanceId() or false
+	return id and tWidgetByInstanceId[ id ] ~= nil
+end
+--------------------------------------------------------------------------------
+
+Используя функцию IsTWidget с обходом глобальной таблицы с помощью var_dump( _G ), 
+сыпятся ошибки:
+--------------------------------------------------------------------------------
+Lua::StateMain::LuaDemandExplicitGlobalDeclarationIndexFunc: Attempt to read from undeclared global variable: GetInstanceId
+  func: __index, metamethod, line: -1, defined: C, line: -1, [C]
+    func: IsTWidget, global, line: 0, defined: Lua, line: 0, /Interface/Common/CoreScripts/WidgetCoreUserMods.lua
+      func: var_dump_internal, upvalue, line: 795, defined: Lua, line: 394, /Mods/Addons/Console/vendor/Alfa-ao/var_dump.lua
+        func: var_dump, global, line: 903, defined: Lua, line: 897, /Mods/Addons/Console/vendor/Alfa-ao/var_dump.lua
+          func: ?, ?, line: 28, defined: Lua, line: 27, /Mods/Addons/Console/Scripts/Main.lua
+            func: ?, ?, line: 0, defined: Lua, line: 0, /Interface/Common/CoreScripts/AdvancedHandlersUserMods.lua
+[22:09:44][UserAddon/Console: 1.0.0 (build 0)]Warning: Addon [UserAddon/Console]: Event [CONSOLE_USERADDON_SEND_DATA] (handler [7]) execution increment ErrorStatistics::errorCounter
+--------------------------------------------------------------------------------
+
+Лечится:
+--------------------------------------------------------------------------------
+local meta = getmetatable( value )
+...
+elseif ENABLE_TWIDGET and meta and meta.GetInstanceId and IsTWidget( value ) then
+--------------------------------------------------------------------------------
+}}
+
+]=]
+
+
 -- test Global( "__CONFIG_VAR_DUMP", {} )
 
 -- ( DEFAULT не трогать. Юзать __CONFIG_VAR_DUMP = {...} в своём коде )
@@ -5,7 +69,8 @@
 local DEFAULT_CONFIG_VAR_DUMP = {
     DEBUG = {
         depth = 10, -- Максимальная глубина рекурсии. table(...) { 1 => table(...) { 1 => И т.д.. } }
-        disableBacktrace = false, -- Отключает вывод структуры вызовов (стэк-трейс)
+        disableBacktrace = true, -- Отключает вывод структуры вызовов (стэк-трейс)
+		returnDump = false, -- Выводит дамб строку вместо записи в лог файл.
     },
     WIDGET = {
         GetPlacementPlain = true,
@@ -35,20 +100,24 @@ local DEFAULT_CONFIG_VAR_DUMP = {
 local function deepMerge( base, source )
     local result = {}
     
-    for k, v in pairs( base ) do
-        if type( v ) == "table" and type( source[k] ) == "table" then
-            result[k] = deepMerge( v, source[k] )
+    for k, v in pairs( source ) do
+        if type( v ) == "table" and type( base[k] ) == "table" then
+            result[k] = deepMerge( base[k], v )
         else
             result[k] = v
         end
     end
     
-    for k, v in pairs( source ) do
+    for k, v in pairs( base ) do
         if result[k] == nil then
-            result[k] = v
+            if type( v ) == "table" then
+                result[k] = deepMerge( v, {} )
+            else
+                result[k] = v
+            end
         end
     end
-    
+
     return result
 end
 
@@ -740,17 +809,6 @@ local function var_dump_internal( value, ctx, inline )
             end
             
             -- UniqueId
-            --------------------------------------------------------------------------------
-            -- Оставлю на память. "Tail Call Optimization Lua"
-            -- Некорректно формируется стек-трейс в Lua c аномальным "bad argument #4".
-            -- указывает на вызывающую функцию var_dump_internal вместо string.format
-            -- bad argument #4 to 'var_dump_internal' (value expected)
-            -- func: ?, ?, line: -1, defined: C, line: -1, [C]
-            -- func: var_dump_internal, upvalue, line: -1, defined: C, line: -1, [C]
-            -- Fix: 
-            -- return string.format( "%s(%s)%s", prefix, tostring( value ) )
-            -- to:
-            --------------------------------------------------------------------------------
             return header_indent .. string.format( "userdata(%s)%s", type_str, address )
             
         elseif native_type == "thread" then
@@ -783,10 +841,12 @@ local function var_dump_internal( value, ctx, inline )
         end
     end
     
+    local meta = getmetatable( value )
+    
     if matched_type then
         table_header = string.format( "table(%s:%d) {", matched_type.name, count_values )
-    elseif ENABLE_TWIDGET and IsTWidget( value ) then
-    local raw_widget = value:GetRaw()
+    elseif ENABLE_TWIDGET and meta and meta.GetInstanceId and IsTWidget( value ) then
+        local raw_widget = value:GetRaw()
         local dump = var_dump_internal( raw_widget, ctx, inline ):gsub( "userdata%(", "TWidget(", 1 )
         return dump
     else
@@ -827,7 +887,6 @@ local function var_dump_internal( value, ctx, inline )
         local dump = nil
         --------------------------------------------------------------------------------
         if matched_type and type( v ) == "number" and type( k ) == "string" then
-            -- Сначало кастомный форматтер
             if matched_type.customFormatter then
                 dump = matched_type.customFormatter( k, v )
             elseif matched_type.fieldMappers and matched_type.fieldMappers[k] then
@@ -910,5 +969,11 @@ function var_dump( ... )
         table.concat( results, "\n----------------------\n" ) .. "\n" ..
         "=======================END=======================\n"
     
-    common.LogInfo( "common", info ) -- Ограничение 64000 символов.
+	if __CONFIG_VAR_DUMP.DEBUG.returnDump then
+		return info
+	end
+	
+	common.LogInfo( "common", info ) -- Ограничение 64000 символов.
+	
+	return nil
 end
