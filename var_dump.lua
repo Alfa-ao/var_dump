@@ -1,6 +1,6 @@
 --[=[
 
-Баги. Обнаруженные и пофикшены в течении времени.
+Баги. Обнаруженные и пофикшены с течением времени.
 
 #1
 {{
@@ -38,8 +38,9 @@ function IsTWidget( widget )
 end
 --------------------------------------------------------------------------------
 
-Используя функцию IsTWidget с обходом глобальной таблицы с помощью var_dump( _G ), 
-сыпятся ошибки:
+
+
+Используя функцию IsTWidget с обходом глобальной таблицы с помощью var_dump( _G ), сыпятся ошибки:
 --------------------------------------------------------------------------------
 Lua::StateMain::LuaDemandExplicitGlobalDeclarationIndexFunc: Attempt to read from undeclared global variable: GetInstanceId
   func: __index, metamethod, line: -1, defined: C, line: -1, [C]
@@ -51,12 +52,8 @@ Lua::StateMain::LuaDemandExplicitGlobalDeclarationIndexFunc: Attempt to read fro
 [22:09:44][UserAddon/Console: 1.0.0 (build 0)]Warning: Addon [UserAddon/Console]: Event [CONSOLE_USERADDON_SEND_DATA] (handler [7]) execution increment ErrorStatistics::errorCounter
 --------------------------------------------------------------------------------
 
-Лечится:
---------------------------------------------------------------------------------
-local meta = getmetatable( value )
-...
-elseif ENABLE_TWIDGET and meta and meta.GetInstanceId and IsTWidget( value ) then
---------------------------------------------------------------------------------
+Лечится кастомно:
+local function IsSafeTWidget( val )
 }}
 
 ]=]
@@ -64,7 +61,7 @@ elseif ENABLE_TWIDGET and meta and meta.GetInstanceId and IsTWidget( value ) the
 
 -- test Global( "__CONFIG_VAR_DUMP", {} )
 
--- ( DEFAULT не трогать. Юзать __CONFIG_VAR_DUMP = {...} в своём коде )
+-- ( DEFAULT не трогать. Юзать __CONFIG_VAR_DUMP = {...} в своём конфиге )
 -- Включение и настройка опций для участия дамба
 local DEFAULT_CONFIG_VAR_DUMP = {
     DEBUG = {
@@ -125,6 +122,30 @@ local __CONFIG_VAR_DUMP = deepMerge( DEFAULT_CONFIG_VAR_DUMP, rawget( _G, "__CON
 
 -- Если появился тип TWidget
 local ENABLE_TWIDGET = type( rawget( _G, "IsTWidget" ) ) == "function"
+
+-- Безопасная проверка того, что таблица является зарегистрированным TWidget
+local function IsSafeTWidget( val )
+    if type( val ) ~= "table" then
+        return false
+    end
+    
+    -- Получить метатаблицу. Если её нет, это точно не TWidget
+    local meta = getmetatable( val )
+    if not meta then
+        return false
+    end
+    
+    -- Внутренняя структура TWidget (GetWidgetCoreTree) хранит поля id и widget в метатаблице
+    local id = rawget( meta, "id" )
+    local widget = rawget( meta, "widget" )
+    
+    -- Проверяется наличие полей и то, что widget является нативным виджетом
+    if id and widget and common.IsWidget( widget ) then
+        return GetTWidgetById( id ) == val
+    end
+    
+    return false
+end
 
 --------------------------------------------------------------------------------
 -- Маппинг констант взамен значений.
@@ -450,6 +471,68 @@ local RESOURCE_INFO_MAP = {
     ["OrderBonusId"] = { name = "order.GetOrderBonusInfo", fn = function( v ) return order.GetOrderBonusInfo( v ) end },
 }
 
+local typesResourceId = {
+    [ "AbilityId" ] = true, -- avatar.GetAbilityInfo
+    [ "ActionGroupId" ] = true, -- GetInfo
+    [ "AliasVisObjectId" ] = true, -- Available only in internal (not UserAddon).
+    [ "BattlegroundMarkId" ] = true, -- GetInfo
+    [ "BillingBonusId" ] = true,
+    [ "BuffId" ] = true,
+    [ "CharacterClassId" ] = true, -- GetInfo
+    [ "CharacterFormId" ] = true, -- GetInfo
+    [ "CombatTagId" ] = true, -- GetInfo
+    [ "ComponentPropertyId" ] = true,
+    [ "CurrencyCategoryId" ] = true, -- GetInfo
+    [ "CurrencyId" ] = true, -- GetInfo
+    [ "DecalObjectId" ] = true, -- Available only in internal (not UserAddon).
+    [ "ForgeCraftRecipeId" ] = true, -- craft.GetForgeRecipeInfo
+    [ "ForgeCraftResourceId" ] = true, -- GetInfo
+    [ "FactionId" ] = true, -- GetInfo
+    [ "GlossaryId" ] = true, -- GetInfo
+    [ "GoalId" ] = true, -- GetInfo
+    [ "InstancedEventCategoryId" ] = true, -- GetInfo
+    [ "InstancedEventResourceId" ] = true, -- GetInfo
+    [ "InterfaceMapMarkerId" ] = true,
+    [ "ItemCategoryId" ] = true,
+    [ "ItemId" ] = true, -- GetInfo
+    [ "ItemClassId" ] = true, -- GetInfo
+    [ "LfgDestinationCategoryId" ] = true, -- GetInfo
+    [ "LfgDestinationId" ] = true, -- GetInfo
+    [ "LifestyleCategoryId" ] = true, -- GetInfo
+    [ "LifestyleCollectionId" ] = true, -- GetInfo
+    [ "LootGroupId" ] = true, -- GetInfo
+    [ "MapModifierId" ] = true, -- 
+    [ "MedalId" ] = true, -- GetInfo
+    [ "MedalRankId" ] = true, -- GetInfo
+    [ "MountTalentId" ] = true, -- GetInfo
+    [ "OrderBonusId" ] = true, -- 
+    [ "PostTypeId" ] = true, -- 
+    [ "QuestId" ] = true, -- GetInfo
+    [ "RecipeId" ] = true, -- GetInfo
+    [ "ResourceId" ] = true, -- GetInfo
+    [ "RuleId" ] = true, -- GetInfo
+    [ "ShipSkinId" ] = true, -- GetInfo
+    [ "SkillId" ] = true, -- GetInfo
+    [ "Sound2DId" ] = true, -- 
+    [ "SpecialStatId" ] = true, -- 
+    [ "SpellId" ] = true, -- 
+    [ "TeleportMasterId" ] = true, -- 
+    [ "TextureId" ] = true, -- common.GetTextureInfo
+    [ "TimeTableId" ] = true, -- GetInfo
+    [ "TutorialCategoryId" ] = true, -- 
+    [ "TutorialId" ] = true, -- 
+    [ "UITextureId" ] = true, -- Available only in internal (not UserAddon).
+    [ "UnlockId" ] = true,
+    [ "UnlockCategoryId" ] = true, -- GetInfo
+    [ "VariableId" ] = true, -- GetInfo
+    [ "VisActionId" ] = true, -- Available only in internal (not UserAddon).
+    [ "VisObjectId" ] = true, -- Available only in internal (not UserAddon).
+    [ "VisualShipId" ] = true, -- GetInfo
+    [ "VoteId" ] = true, -- GetInfo
+    [ "WishmasterResourceId" ] = true, -- GetInfo
+    [ "ZodiacSignId" ] = true,
+}
+
 --- Выводит содержимое переменной с типами и структурой.
 --- @param value any Переменная для дампа
 --- @param ctx table Контекст рекурсии { depth, indent, seen, ancestors }
@@ -551,67 +634,9 @@ local function var_dump_internal( value, ctx, inline )
                 --------------------------------------------------------------------------------
                 table.insert( block_ctx.parts, indent_str .. "}" )
                 return finish( table.concat( block_ctx.parts, "\n" ) )
-            elseif
-                type_str == "AbilityId" or -- avatar.GetAbilityInfo
-                type_str == "ActionGroupId" or -- GetInfo
-                type_str == "AliasVisObjectId" or -- Available only in internal (not UserAddon).
-                type_str == "BattlegroundMarkId" or -- GetInfo
-                type_str == "BillingBonusId" or
-                type_str == "BuffId" or
-                type_str == "CharacterClassId" or -- GetInfo
-                type_str == "CharacterFormId" or -- GetInfo
-                type_str == "CombatTagId" or -- GetInfo
-                type_str == "ComponentPropertyId" or
-                type_str == "CurrencyCategoryId" or -- GetInfo
-                type_str == "CurrencyId" or -- GetInfo
-                type_str == "DecalObjectId" or -- Available only in internal (not UserAddon).
-                type_str == "ForgeCraftRecipeId" or -- craft.GetForgeRecipeInfo
-                type_str == "ForgeCraftResourceId" or -- GetInfo
-                type_str == "FactionId" or -- GetInfo
-                type_str == "GlossaryId" or -- GetInfo
-                type_str == "GoalId" or -- GetInfo
-                type_str == "InstancedEventCategoryId" or -- GetInfo
-                type_str == "InstancedEventResourceId" or -- GetInfo
-                type_str == "InterfaceMapMarkerId" or
-                type_str == "ItemCategoryId" or
-                type_str == "ItemId" or -- GetInfo
-                type_str == "ItemClassId" or -- GetInfo
-                type_str == "LfgDestinationCategoryId" or -- GetInfo
-                type_str == "LfgDestinationId" or -- GetInfo
-                type_str == "LifestyleCategoryId" or -- GetInfo
-                type_str == "LifestyleCollectionId" or -- GetInfo
-                type_str == "LootGroupId" or -- GetInfo
-                type_str == "MapModifierId" or -- 
-                type_str == "MedalId" or -- GetInfo
-                type_str == "MedalRankId" or -- GetInfo
-                type_str == "MountTalentId" or -- GetInfo
-                type_str == "OrderBonusId" or -- 
-                type_str == "PostTypeId" or -- 
-                type_str == "QuestId" or -- GetInfo
-                type_str == "RecipeId" or -- GetInfo
-                type_str == "ResourceId" or -- GetInfo
-                type_str == "RuleId" or -- GetInfo
-                type_str == "ShipSkinId" or -- GetInfo
-                type_str == "SkillId" or -- GetInfo
-                type_str == "Sound2DId" or -- 
-                type_str == "SpecialStatId" or -- 
-                type_str == "SpellId" or -- 
-                type_str == "TeleportMasterId" or -- 
-                type_str == "TextureId" or -- common.GetTextureInfo
-                type_str == "TimeTableId" or -- GetInfo
-                type_str == "TutorialCategoryId" or -- 
-                type_str == "TutorialId" or -- 
-                type_str == "UITextureId" or -- Available only in internal (not UserAddon).
-                type_str == "UnlockId" or
-                type_str == "UnlockCategoryId" or -- GetInfo
-                type_str == "VariableId" or -- GetInfo
-                type_str == "VisActionId" or -- Available only in internal (not UserAddon).
-                type_str == "VisObjectId" or -- Available only in internal (not UserAddon).
-                type_str == "VisualShipId" or -- GetInfo
-                type_str == "VoteId" or -- GetInfo
-                type_str == "WishmasterResourceId" or -- GetInfo
-                type_str == "ZodiacSignId"
-            then -- Один из ResourceId
+                --------------------------------------------------------------------------------
+            -- Один из ResourceId
+            elseif typesResourceId[ type_str ] or false then
                 block_ctx.parts = { header_indent .. string.format( "userdata(%s)%s = {", type_str, address ) }
                 local info_getter = RESOURCE_INFO_MAP[ type_str ]
                 --------------------------------------------------------------------------------
@@ -818,6 +843,8 @@ local function var_dump_internal( value, ctx, inline )
         return prefix
     end
     
+    
+    
     --------------------------------------------------------------------------------
     -- TABLE
     --------------------------------------------------------------------------------
@@ -841,11 +868,9 @@ local function var_dump_internal( value, ctx, inline )
         end
     end
     
-    local meta = getmetatable( value )
-    
     if matched_type then
         table_header = string.format( "table(%s:%d) {", matched_type.name, count_values )
-    elseif ENABLE_TWIDGET and meta and meta.GetInstanceId and IsTWidget( value ) then
+    elseif ENABLE_TWIDGET and IsSafeTWidget( value ) then
         local raw_widget = value:GetRaw()
         local dump = var_dump_internal( raw_widget, ctx, inline ):gsub( "userdata%(", "TWidget(", 1 )
         return dump
@@ -946,7 +971,12 @@ local function debug_backtrace()
     return table.concat( formattedStack, "\n" )
 end
 
--- Public функция
+
+--------------------------------------------------------------------------------
+--- [P] Публичная функция var_dump принимает N аргументы.
+--- @param ... any Можно всё что угодно кидать.
+--- @return string | nil info Выводит строку, если опция returnDump = true
+--------------------------------------------------------------------------------
 function var_dump( ... )
     local results = {}
     local result
@@ -954,10 +984,10 @@ function var_dump( ... )
     
     for i = 1, #args do
         result = var_dump_internal( args[i], { 
-            depth = __CONFIG_VAR_DUMP.DEBUG.depth, 
-            indent = 0, 
-            seen = {}, 
-            ancestors = {} 
+            depth = __CONFIG_VAR_DUMP.DEBUG.depth,
+            indent = 0,
+            seen = {},
+            ancestors = {}
         } )
         
         table.insert( results, result )
