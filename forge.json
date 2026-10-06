@@ -1,0 +1,14 @@
+{
+    "name": "Debug",
+    "type": "Library",
+    "execute": {
+        "unpack": [
+            "var_dump.lua"
+        ]
+    },
+    "files": {
+        "first": [
+            "var_dump.lua"
+        ]
+    }
+}
