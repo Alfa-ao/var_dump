@@ -12,44 +12,42 @@ var_dump( value: any, ... )
 
 Аллоды Онлайн\Personal\Logs\mods.txt
 
+## Подключение
+
+[**ForgePackage**](https://github.com/Alfa-ao/ForgePackage)
+
+```
+require Alfa-ao/var_dump
+```
+
+## Использование
+
+
+
+
 **Ограничения:**
 
 ```lua
 common.LogInfo( "common", info ) -- Ограничение 64000 символов.
 ```
 
-**Стандартные настройки:**
+Можно прописать в пользовательский конфиг с нужными настройками на выбор, например:
 
 ```lua
-local __CONFIG_VAR_DUMP = {
+Global( "__CONFIG_VAR_DUMP", {
     DEBUG = {
-        depth = 10 -- Максимальная глубина рекурсии. table(...) { 1 => table(...) { 1 => И т.д.. } }
-    },
-    WIDGET = {
-        GetPlacementPlain = true,
-        GetSmartPlacementPlain = false,
-        GetRealRect = false,
-        GetNamedChildren = false, -- false: Использовать только имена, иначе может забить весь лог до ограничения
-        IsEnabled = true,
-        IsEnabledEx = true,
-        IsVisible = true,
-        IsVisibleEx = true,
-    },
-    RESOURCE_ID = {
-        GetOnlyInfo = false, -- true: Использовать только метод ResourceId:GetInfo
-    },
-    USERDATA = {
-        hexadecimal = false, -- Показывать адрес хранения #0x0f810b80. userdata(name)#0x0f810b80 = { ... }
-    },
-    TABLE = {
-        tableIdentification = true, -- Распознать таблицу и присвоить ей имя. table (Color) { ... }
-    },
-}
+        disableBacktrace = false, -- Включение (стэк-трейс) вызовов.
+    }
+} )
 ```
+
+Все опции находятся внутри `var_dump.lua` в таблице `DEFAULT_CONFIG_VAR_DUMP`.
 
 ---
 
-## Идентификация статических таблиц
+## Примеры
+
+### Идентификация статических таблиц
 
 ```lua
 -- table(WidgetPlacementLua:N) { ... }
@@ -83,7 +81,7 @@ table(Color:4) {
 
 ---
 
-## Стандартный дебаг
+### Стандартный дебаг
 
 ```lua
 var_dump( avatar.GetAlchemyInfo() )
@@ -192,7 +190,7 @@ table(12) {
 
 ---
 
-## Обнаружение рекурсий
+### Обнаружение рекурсий
 
 ```lua
 local a = { w = userMods.ToWString( "rrr" ), d = nil}
@@ -217,7 +215,7 @@ table(2) {
 
 ---
 
-## Информация по виджету
+### Информация по виджету
 
 ```lua
 var_dump( common.GetAddonMainForm( "UserAddon/LibreAlchemyV2" ) )
