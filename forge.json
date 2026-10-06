@@ -7,8 +7,6 @@
         ]
     },
     "files": {
-        "first": [
-            "var_dump.lua"
-        ]
+        "var_dump.lua": 21
     }
 }
