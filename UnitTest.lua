@@ -180,11 +180,10 @@ local itemRuneInfo = itemLib.GetRuneInfo( id )
 var_dump( itemRuneInfo ) ]]
 
 --------------------------------------------------------------------------------
---- @type userdata | table Widget
+--- @type userdata | TWidget
 --------------------------------------------------------------------------------
 --var_dump( common.GetAddonMainForm( "UserAddon/LibreAlchemyV2" ) )
 --var_dump( mainForm )
---var_dump( _G.table )
 --------------------------------------------------------------------------------
 --- @type FactoryCacheSafe | lightuserdata
 --------------------------------------------------------------------------------
