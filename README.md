@@ -43,6 +43,13 @@ Global( "__CONFIG_VAR_DUMP", {
 
 Все опции находятся внутри `var_dump.lua` в таблице `DEFAULT_CONFIG_VAR_DUMP`.
 
+Ваш конфиг должен подключаться выше самого инструмента, т.к. при загрузке используется `deepMerge` для совмещения.
+
+```xml
+<Item href="Config.lua" />
+<Item href="var_dump.lua" />
+```
+
 ---
 
 ## Примеры
