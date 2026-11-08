@@ -60,7 +60,6 @@ local function IsSafeTWidget( val )
 
 
 -- test Global( "__CONFIG_VAR_DUMP", {} )
-
 -- ( DEFAULT не трогать. Юзать __CONFIG_VAR_DUMP = {...} в своём конфиге )
 -- Включение и настройка опций для участия дамба
 local DEFAULT_CONFIG_VAR_DUMP = {
@@ -89,7 +88,7 @@ local DEFAULT_CONFIG_VAR_DUMP = {
         tableIdentification = true, -- Распознать таблицу и присвоить ей имя. table (Color) { ... }
     },
 }
-
+--------------------------------------------------------------------------------
 --- Совмещение default и юзер таблицы конфига
 --- @param base table Дефолт таблица
 --- @param source table user custom table
@@ -117,12 +116,18 @@ local function deepMerge( base, source )
 
     return result
 end
-
-local __CONFIG_VAR_DUMP = deepMerge( DEFAULT_CONFIG_VAR_DUMP, rawget( _G, "__CONFIG_VAR_DUMP" ) or {} )
-
+--------------------------------------------------------------------------------
+local configCustom = rawget( _G, "__CONFIG_VAR_DUMP" )
+local configMerge = deepMerge( DEFAULT_CONFIG_VAR_DUMP, configCustom or {} )
+if configCustom then
+    __CONFIG_VAR_DUMP = configMerge
+else
+    Global( "__CONFIG_VAR_DUMP", configMerge )
+end
+--------------------------------------------------------------------------------
 -- Если появился тип TWidget
 local ENABLE_TWIDGET = type( rawget( _G, "IsTWidget" ) ) == "function"
-
+--------------------------------------------------------------------------------
 -- Безопасная проверка того, что таблица является зарегистрированным TWidget
 local function IsSafeTWidget( val )
     if type( val ) ~= "table" then
@@ -150,14 +155,13 @@ end
 --------------------------------------------------------------------------------
 -- Маппинг констант взамен значений.
 --------------------------------------------------------------------------------
-
 -- Маппинг для WidgetSafe:GetAddonType
 local ENUM_ADDON_TYPE_MAP = {
     [ENUM_ADDON_TYPE_NONE] = "ENUM_ADDON_TYPE_NONE",
     [ENUM_ADDON_TYPE_USER] = "ENUM_ADDON_TYPE_USER",
     [ENUM_ADDON_TYPE_PROTECTED] = "ENUM_ADDON_TYPE_PROTECTED",
 }
-
+--------------------------------------------------------------------------------
 -- Маппинг для ValuedObject:GetType
 local ENUM_VAL_OBJ_TYPE_MAP = {
     [VAL_OBJ_TYPE_UNKNOWN] = "VAL_OBJ_TYPE_UNKNOWN",
@@ -187,7 +191,7 @@ local ENUM_VAL_OBJ_TYPE_MAP = {
     [VAL_OBJ_TYPE_LFG_DESTINATION] = "VAL_OBJ_TYPE_LFG_DESTINATION",
     [VAL_OBJ_TYPE_ACTION_GROUP] = "VAL_OBJ_TYPE_ACTION_GROUP",
 }
-
+--------------------------------------------------------------------------------
 -- Маппинг констант для (WidgetPlacementLua)
 local WIDGET_ALIGN_MAP = {
     [WIDGET_ALIGN_LOW] = "WIDGET_ALIGN_LOW",
@@ -196,14 +200,14 @@ local WIDGET_ALIGN_MAP = {
     [WIDGET_ALIGN_BOTH] = "WIDGET_ALIGN_BOTH",
     [WIDGET_ALIGN_LOW_ABS] = "WIDGET_ALIGN_LOW_ABS",
 }
-
+--------------------------------------------------------------------------------
 -- Маппинг констант для sizingX / sizingY
 local WIDGET_SIZING_MAP = {
     [WIDGET_SIZING_DEFAULT] = "WIDGET_SIZING_DEFAULT",
     [WIDGET_SIZING_CHILDREN] = "WIDGET_SIZING_CHILDREN",
     [WIDGET_SIZING_INTERNAL] = "WIDGET_SIZING_INTERNAL",
 }
-
+--------------------------------------------------------------------------------
 -- Маппинг констант (дней)
 local ENUM_DAY_OF_WEEK_MAP = {
     [ENUM_Monday] = "ENUM_Monday",
@@ -214,7 +218,7 @@ local ENUM_DAY_OF_WEEK_MAP = {
     [ENUM_Saturday] = "ENUM_Saturday",
     [ENUM_Sunday] = "ENUM_Sunday",
 }
-
+--------------------------------------------------------------------------------
 -- Маппинг констант (месяцев)
 local ENUM_MONTH_MAP = {
     [ENUM_Month_January] = "ENUM_Month_January",
@@ -230,14 +234,14 @@ local ENUM_MONTH_MAP = {
     [ENUM_Month_November] = "ENUM_Month_November",
     [ENUM_Month_December] = "ENUM_Month_December",
 }
-
+--------------------------------------------------------------------------------
 -- Маппинг констант для (LuaSexInfoPart)
 local ENUM_SEX_MAP = {
     [SEX_UNKNOWN] = "SEX_UNKNOWN",
     [SEX_MALE] = "SEX_MALE",
     [SEX_FEMALE] = "SEX_FEMALE",
 }
-
+--------------------------------------------------------------------------------
 -- Маппинг констант для (MutationInfo)
 local ENUM_ZONE_TIER_DIFFICULTY_MAP = {
     [ZONE_TIER_DIFFICULTY_DEFAULT] = "ZONE_TIER_DIFFICULTY_DEFAULT",
@@ -247,16 +251,14 @@ local ENUM_ZONE_TIER_DIFFICULTY_MAP = {
     [ZONE_TIER_DIFFICULTY_HARD] = "ZONE_TIER_DIFFICULTY_HARD",
     [ZONE_TIER_DIFFICULTY_INSANE] = "ZONE_TIER_DIFFICULTY_INSANE",
 }
-
+--------------------------------------------------------------------------------
 -- Маппинг для (TextureInfo). В кодовом API таких констант не существует. Только для текстурных виджетов.
 local TEXTURE_TYPE_MAP = {
     [0] = "DXT1",
     [1] = "DXT3",
     [2] = "DXT5",
 }
-
 --------------------------------------------------------------------------------
-
 --- Для создания функций валидации структуры таблицы.
 --- @param schema table Хеш-таблица { [ имя поля ] = { допустимые типы } }.
 --- @return function
@@ -320,14 +322,12 @@ local function createTableValidator( schema )
         return true
     end
 end
-
 --------------------------------------------------------------------------------
 --- Каждая таблица содержит:
 --- name - имя типа для заголовка
 --- schema - схема полей типизации для createTableValidator
 --- fieldMappers - маппинг полей (необязательно)
 --- customFormatter - кастомная форматировка (необязательно)
---------------------------------------------------------------------------------
 local TABLE_TYPES = {
     {
         name = "Color",
@@ -435,13 +435,11 @@ local TABLE_TYPES = {
         end,
     },
 }
-
+--------------------------------------------------------------------------------
 for _, desc in ipairs( TABLE_TYPES ) do
     desc.validator = createTableValidator( desc.schema )
 end
-
 --------------------------------------------------------------------------------
-
 -- Чистка от всякого хлама
 local escaped = function( value ) 
     return value:gsub( "[\a\b\f\n\r\t\v\\\"]", {
@@ -450,7 +448,7 @@ local escaped = function( value )
         ["\v"] = "\\v", ["\\"] = "\\\\", ["\""] = "\\\""
     } )
 end
-
+--------------------------------------------------------------------------------
 -- Маппинг функций для (ResourceId). ResourceId:GetInfo не интересен, либо выводит пустую {}у.
 local RESOURCE_INFO_MAP = {
     ["AbilityId"] = { name = "avatar.GetAbilityInfo", fn = function( v ) return avatar.GetAbilityInfo( v ) end },
@@ -470,7 +468,7 @@ local RESOURCE_INFO_MAP = {
     ["VariableId"] = { name = "avatar.GetVariableInfo", fn = function( v ) return avatar.GetVariableInfo( v ) end },
     ["OrderBonusId"] = { name = "order.GetOrderBonusInfo", fn = function( v ) return order.GetOrderBonusInfo( v ) end },
 }
-
+--------------------------------------------------------------------------------
 local typesResourceId = {
     [ "AbilityId" ] = true, -- avatar.GetAbilityInfo
     [ "ActionGroupId" ] = true, -- GetInfo
@@ -532,7 +530,7 @@ local typesResourceId = {
     [ "WishmasterResourceId" ] = true, -- GetInfo
     [ "ZodiacSignId" ] = true,
 }
-
+--------------------------------------------------------------------------------
 --- Выводит содержимое переменной с типами и структурой.
 --- @param value any Переменная для дампа
 --- @param ctx table Контекст рекурсии { depth, indent, seen, ancestors }
@@ -932,7 +930,7 @@ local function var_dump_internal( value, ctx, inline )
     table.insert( parts, indent_str .. "}" )
     return finish( table.concat( parts, "\n" ) )
 end
-
+--------------------------------------------------------------------------------
 --- @return string
 local function debug_backtrace()
     local formattedStack = {}
@@ -970,13 +968,10 @@ local function debug_backtrace()
     
     return table.concat( formattedStack, "\n" )
 end
-
-
 --------------------------------------------------------------------------------
---- [P] Публичная функция var_dump принимает N аргументы.
+--- Функция var_dump принимает N аргументы.
 --- @param ... any Можно всё что угодно кидать.
 --- @return string | nil info Выводит строку, если опция returnDump = true
---------------------------------------------------------------------------------
 function var_dump( ... )
     local results = {}
     local result

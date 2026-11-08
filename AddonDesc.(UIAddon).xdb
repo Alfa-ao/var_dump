@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <UIAddon>
 	<Name>TestVarDump</Name>
-	<AutoStart>true</AutoStart>
-	<Form href="Widgets/TestVarDump.(WidgetForm).xdb" />
 	<userAddonInfo>
 		<name href="AddonName.txt" />
 		<description href="AddonDescription.txt" />
@@ -10,13 +8,9 @@
 	</userAddonInfo>
 	<ScriptFileRefs>
 		<Item href="/Mods/SampleCommon/CoreScripts/ClassesImplementation.lua" />
-		
-		<!-- Debug -->
 		<Item href="var_dump.lua" />
 		<Item href="UnitTest.lua" />
 	</ScriptFileRefs>
-	
-	<!-- Локализация Аддона -->
 	<textsGroups>
 		<Item>
 			<groupName>template</groupName>
