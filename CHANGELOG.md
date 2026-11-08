@@ -2,6 +2,16 @@
 
 Все перечисленные изменения в релизе.
 
+
+
+## [v1.5.2.7](https://github.com/Alfa-ao/var_dump/releases/tag/v1.5.2.7)
+
+### Changed
+
+- Исправлен недочёт связанный с отсутствием `__CONFIG_VAR_DUMP`.
+
+
+
 ## [v1.5.2](https://github.com/Alfa-ao/var_dump/releases/tag/v1.5.2)
 
 ### Added
