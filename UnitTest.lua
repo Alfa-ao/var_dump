@@ -256,12 +256,20 @@ table(38) {
 -- Удалены следующие функции:
 -- https://alfa-ao.github.io/allods-lua-api-docs/#18.0.0-spellLib._DurationBuff
 --var_dump( "#18.0.0-spellLib._DurationBuff", spellLib.HasDurationBuff, spellLib.GetDurationBuff )
-
+--[[ function(function: 0x220c1a78)
+----------------------
+function(function: 0x220c49c0) ]]
 --------------------------------------------------------------------------------
 
 -- Индексация возвращаемой таблицы становится валидным 0 => 1
 -- https://alfa-ao.github.io/allods-lua-api-docs/#17.0.0-options.Get...Ids
 --var_dump( "#17.0.0-options.Get...Ids", options.GetPageIds() )
+--[[ table(4) {
+    [0] => number(1)
+    [1] => number(18)
+    [2] => number(50)
+    [3] => number(66)
+} ]]
 
 --------------------------------------------------------------------------------
 
@@ -269,30 +277,30 @@ table(38) {
 -- Разделены по типу на булевые / все остальные. Можно передать 3 аргумент true для мгновенного применения.
 -- https://alfa-ao.github.io/allods-lua-api-docs/#17.0.0-options.SetOptionCurrentIndex
 --var_dump( "#17.0.0-options.SetOptionCurrentIndex", options.SetOptionCurrentIndex, options.SetOptionEnabled, options.SetOptionIndex )
-
+--[[ function(function: 0x220ddbd8) ]]
 --------------------------------------------------------------------------------
 
 -- Новые API
 -- https://alfa-ao.github.io/allods-lua-api-docs/#17.0.0-options.IsOptionEnabled
 --var_dump( "#17.0.0-options.IsOptionEnabled", options.IsOptionEnabled )
-
+--[[   ]]
 --------------------------------------------------------------------------------
 
 -- Тип UniqueId меняется с userdata на number (int64) во всех связанных API. Соответственно все методы UniqueId исчезают.
 -- https://alfa-ao.github.io/allods-lua-api-docs/#17.0.0-UniqueId
 --var_dump( "#17.0.0-UniqueId", avatar.GetUniqueId() )
-
+--[[ userdata(UniqueId) ]]
 --------------------------------------------------------------------------------
 
 -- Аддоны использующие кастомные стили должны будут явно их загрузить. 
 -- Появится специальная API: common.LoadCustomCss( id ) - загружает набор стилей аддона с заданным id.
 -- https://alfa-ao.github.io/allods-lua-api-docs/#17.0.0-WidgetCss
 --var_dump( "#17.0.0-WidgetCss", common.LoadCustomCss )
-
+--[[   ]]
 --------------------------------------------------------------------------------
 
 -- Функция DEPRECATED. Аналог common.SendUserModsEvent
 -- https://alfa-ao.github.io/allods-lua-api-docs/#16.0.0-userMods.SendEvent
 --var_dump( "#16.0.0-userMods.SendEvent", userMods.SendEvent )
-
+--[[ function(function: 0x220e4358) ]]
 --------------------------------------------------------------------------------
